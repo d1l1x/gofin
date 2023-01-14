@@ -13,8 +13,8 @@ func CheckInput(input []float64, period int) error {
 	if period <= 0 {
 		return fmt.Errorf("invalid period: %d", period)
 	}
-	if period > len(input) {
-		return fmt.Errorf("invalid period: %d > %d", period, len(input))
+	if period >= len(input) {
+		return fmt.Errorf("invalid period: %d >= %d", period, len(input))
 	}
 	return nil
 }
