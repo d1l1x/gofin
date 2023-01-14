@@ -19,14 +19,20 @@ func CheckInput(input []float64, period int) error {
 	return nil
 }
 
-func sliceAlmostEqual(a, b []float64, acc float64) (bool, error) {
+func sliceAlmostEqual(a, b []float64, acc float64, args ...string) (bool, error) {
 	if len(a) != len(b) {
 		return false, fmt.Errorf("slices must have equal length: %d != %d", len(a), len(b))
 	}
+	msg := ""
+
+	switch len(args) {
+	case 1: msg = args[0]
+	}
+
 	for i := range a{
 		diff := math.Abs(a[i] - b[i])
 		if diff >= acc {
-			return false, fmt.Errorf("%v!=%v at index %d", a[i],b[i],i)
+			return false, fmt.Errorf("%s%v!=%v at index %d", msg, a[i],b[i],i)
 		}
 	}
     return true, nil
