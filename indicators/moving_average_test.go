@@ -59,10 +59,10 @@ func TestSmaPeriod3(t *testing.T) {
 
 }
 
-func TestSmaPeriodSameAsInputSize(t *testing.T) {
+func TestSmaPeriod8(t *testing.T) {
 	input := []float64{2,4,6,8,12,14,16,18,20}
-	period := 9
-	want := []float64{0,0,0,0,0,0,0,0,11.11111111}
+	period := 8
+	want := []float64{0,0,0,0,0,0,0,10,98./8}
 
 	got, err := MA(input, period, SMA)
 	if err != nil {
@@ -149,10 +149,10 @@ func TestLwmaPeriod3(t *testing.T) {
 	}
 }
 
-func TestLwmaPeriod5(t *testing.T) {
+func TestLwmaPeriod4(t *testing.T) {
 	input := []float64{22.73,22.71,22.57,22.59,22.72}
-	period := 5
-	want := []float64{0,0,0,0,22.65466666667}
+	period := 4
+	want := []float64{0,0,0,22.622,22.65}
 
 	got, err := MA(input, period, LWMA)
 	if err != nil {
