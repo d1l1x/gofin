@@ -50,17 +50,14 @@ func computeLwmaWeights(period int) []float64 {
 }
 
 func ema(input []float64, period int) []float64 {
-	// res := make([]float64, len(input))
-	// copy(res, input)
-
 	weights := computeSwmaWeights(period)
 	res := wma(input, weights)
 	alpha := 2.0/(float64(period) + 1)
+	res[0] = input[0]
 	// y_(i+1) = y_i + alpha * (x_(i+1) i y_i)
-	for i:=period-1; i<len(input) - 1; i++ {
+	for i:=0; i<len(input) - 1; i++ {
 		res[i + 1] = res[i] + alpha * (input[i+1] - res[i]) 
 	}
-
 	return res
 }
 
