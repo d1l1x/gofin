@@ -8,6 +8,7 @@ const (
 	SMA maType = iota
 	EMA
 	LWMA
+	WILDER
 )
 
 func MA(input []float64, period int, matype maType) ([]float64, error) {
@@ -26,6 +27,8 @@ func MA(input []float64, period int, matype maType) ([]float64, error) {
 		return wma(input, weights), nil
 	case EMA:
 		return ema(input, period), nil
+	case WILDER:
+		return wilder(input, period), nil
 	default:
 		return nil, fmt.Errorf("moving average type not yet implemented.: %d", matype)
 	}
@@ -70,5 +73,29 @@ func wma(input []float64, weights []float64) []float64 {
 			}
 		}
 	}
+	return res
+}
+
+
+func wilder(input []float64, period int) []float64 {
+	res := make([]float64, len(input))
+
+	// Calculate the first WilderMA value
+	sum := 0.0
+	for _, value := range input[:period] {
+		sum += value
+	}
+	res[period-1] = sum / float64(period)
+
+	// Calculate the rest of the WilderMA values
+	for i := period; i < len(input); i++ {
+		res[i] = ((res[i-1] * float64(period-1)) + input[i]) / float64(period)
+	}
+
+	// Replace the first period-1 values with NaN
+	for i := 0; i < period-1; i++ {
+		res[i] = 0.0
+	}
+
 	return res
 }
