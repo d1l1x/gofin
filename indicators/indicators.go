@@ -5,6 +5,14 @@ import (
 	"math"
 )
 
+type BarHistory struct {
+	Open   []float64
+	High   []float64
+	Low    []float64
+	Close  []float64
+	Volume []int64
+}
+
 func CheckInput(input []float64, period int) error {
 
 	if input == nil {
@@ -31,6 +39,9 @@ func sliceAlmostEqual(a, b []float64, acc float64, args ...string) (bool, error)
 
 	for i := range a{
 		diff := math.Abs(a[i] - b[i])
+		if math.IsNaN(diff) {
+			return false, fmt.Errorf("found NaN at index %d, %v, %v", i, a[i], b[i])
+		}
 		if diff >= acc {
 			return false, fmt.Errorf("%s%v!=%v at index %d", msg, a[i],b[i],i)
 		}
