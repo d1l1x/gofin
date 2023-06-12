@@ -28,17 +28,25 @@ func DiPlusMinus(input BarHistory, period int) ([]float64, []float64) {
 			dm[i] = 0
 		}
 	}
-	atr := ATR(input, period)
+	atr := TR(input)
 
-	adip, _ := MA(dp, period, WILDER)
-	adim, _ := MA(dm, period, WILDER)
+	dip := make([]float64, len(input.Close))
+	dim := make([]float64, len(input.Close))
 
-	for i:=period-1; i<len(input.Close); i++ {
-		adip[i] = math.Round(100 * adip[i] / atr[i])
-		adim[i] = math.Round(100 * adim[i] / atr[i])
+	for i:=0; i<len(input.Close); i++ {
+		dip[i] = 100 * dp[i] / atr[i]
+		dim[i] = 100 * dm[i] / atr[i]
 	}
 
-	return adip, adim
+	adp, _ := MA(dip, period, SMA)
+	adm, _ := MA(dim, period, SMA)
+
+	for i:=0; i<len(input.Close); i++ {
+		adp[i] = math.Round(adp[i])
+		adm[i] = math.Round(adm[i])
+	}
+
+	return adp, adm
 
 }
 
