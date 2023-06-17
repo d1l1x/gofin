@@ -89,12 +89,7 @@ func wilder(input []float64, period int) []float64 {
 
 	// Calculate the rest of the WilderMA values
 	for i := period; i < len(input); i++ {
-		res[i] = ((res[i-1] * float64(period-1)) + input[i]) / float64(period)
-	}
-
-	// Replace the first period-1 values with NaN
-	for i := 0; i < period-1; i++ {
-		res[i] = 0.0
+		res[i] = res[i-1] + (input[i] - res[i-1]) / float64(period)
 	}
 
 	return res

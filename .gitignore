@@ -16,3 +16,4 @@ venv
 # vendor/
 #
 __debug_bin
+.vscode
