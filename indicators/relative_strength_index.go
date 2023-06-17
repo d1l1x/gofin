@@ -7,18 +7,28 @@ func RSI(input []float64, period int) []float64 {
 	}
 
 	rsi := make([]float64, len(input))
-	gains := make([]float64, len(input))
-	losses := make([]float64, len(input))
-	for i:=1; i<len(input); i++ {
-		gains[i], losses[i] = calculateGainLoss(input[i], input[i-1])
-	}
 
-	avgGains,_ := MA(gains, period, WILDER)
-	avgLosses,_ := MA(losses, period, WILDER)
+	sumGains := 0.0
+	sumLosses := 0.0
+
+	for i:=1; i<period; i++ {
+		gain, loss := calculateGainLoss(input[i], input[i-1])
+		sumGains += gain
+		sumLosses += loss
+	}
+	sumGains /= float64(period)
+	sumLosses /= float64(period)
+
+	rsi[period-1] = 100.0 - ( 100.0 / ( 1.0 + sumGains / sumLosses ) )
+
 	for i:=period; i<len(input); i++ {
-		rsi[i] = 100.0 * avgGains[i] / ( avgGains[i] + avgLosses[i] )
+		gain, loss := calculateGainLoss(input[i], input[i-1])
+		sumGains = (sumGains * float64(period-1)  + gain) / float64(period)
+		sumLosses = (sumLosses * float64(period-1)  + loss) / float64(period)
+		rsi[i] = 100.0 - ( 100.0 / ( 1.0 + sumGains / sumLosses ) )
 	}
-
+	// first value is just to start the averaging
+	rsi[period-1] = 0.0
 	return rsi
 }
 
