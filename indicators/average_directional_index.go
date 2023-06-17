@@ -12,41 +12,51 @@ func DiPlusMinus(input BarHistory, period int) ([]float64, []float64) {
 	dp := make([]float64, len(input.Close))
 	dm := make([]float64, len(input.Close))
 
+	tr := TR(input)
+
 	for i:=1; i<len(input.Close); i++ {
 
 		upMove := input.High[i] - input.High[i-1]
 		downMove := input.Low[i-1] - input.Low[i]
 
-		if downMove > upMove && downMove > 0 {
-			dp[i] = 0
-			dm[i] = downMove
-		} else if upMove > downMove && upMove > 0 {
-			dp[i] = upMove
-			dm[i] = 0
-		} else {
-			dp[i] = 0
+		if upMove > downMove && upMove > 0{
+			dp[i] = upMove 
 			dm[i] = 0
 		}
-	}
-	atr := TR(input)
-
-	dip := make([]float64, len(input.Close))
-	dim := make([]float64, len(input.Close))
-
-	for i:=0; i<len(input.Close); i++ {
-		dip[i] = 100 * dp[i] / atr[i]
-		dim[i] = 100 * dm[i] / atr[i]
+		if downMove > upMove && downMove > 0{
+			dp[i] = 0
+			dm[i] = downMove 
+		}
 	}
 
-	adp, _ := MA(dip, period, SMA)
-	adm, _ := MA(dim, period, SMA)
+	dip := 0.0
+	dim := 0.0
+	trp := 0.0
 
-	for i:=0; i<len(input.Close); i++ {
-		adp[i] = math.Round(adp[i])
-		adm[i] = math.Round(adm[i])
+	for i:=0; i<period; i++ {
+		dip += dp[i]
+		dim += dm[i]
+		trp += tr[i]
 	}
 
-	return adp, adm
+	pdp := dip
+	pdm := dim
+	ptr := trp
+
+	for i:=period; i<len(input.Close); i++ {
+		adp := pdp - pdp/float64(period) + dp[i]
+		adm := pdm - pdm/float64(period) + dm[i]
+		atr := ptr - ptr/float64(period) + tr[i]
+
+		dp[i] = math.Round(100.0 * adp / atr)
+		dm[i] = math.Round(100.0 * adm / atr)
+
+		pdp = adp
+		pdm = adm
+		ptr = atr
+	}
+
+	return dp, dm
 
 }
 
@@ -58,13 +68,17 @@ func ADX(input BarHistory, period int) []float64 {
 
 	adip,adim := DiPlusMinus(input, period)
 
-	dx := make([]float64, len(adip))
-	for i, val := range adip {
-		dx[i] = math.Round(math.Abs(val - adim[i]) / math.Abs(val + adim[i]) * 100)
+	dx := 0.0
+	for i:=period; i<2*period; i++ {
+		dx += 100*math.Abs(adip[i] - adim[i]) / (adip[i] + adim[i])
 	}
-	dx[0] = 0.0
+	dx /= float64(period)
 
-	adx,_ := MA(dx, period, WILDER)
+	adx := make([]float64, len(input.Close))
+	adx[2*period-1] = dx
+	for i:=2*period; i<len(input.Close); i++ {
+		adx[i] = (adx[i-1] * float64(period-1) + 100*math.Abs(adip[i] - adim[i]) / (adip[i] + adim[i])) / float64(period)
+	}
 
 	return adx
 }
