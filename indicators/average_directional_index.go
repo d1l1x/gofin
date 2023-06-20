@@ -4,20 +4,56 @@ import (
 	"math"
 )
 
-func DiPlusMinus(input BarHistory, period int) ([]float64, []float64) {
-	if len(input.Close) < period {
+type AverageDirectionalIndex struct {
+	BarHistoryIndicator
+}
+
+func ADX(bars BarHistory, period int) *AverageDirectionalIndex {
+	return &AverageDirectionalIndex{
+		BarHistoryIndicator: NewBarHistoryIndicator(bars,period),
+	}
+}
+
+
+
+// Calculate Average Directional Index (ADX)
+func (ind *AverageDirectionalIndex) Compute() []float64 {
+	if len(ind.input.Close) < ind.period {
+		return nil
+	}
+
+	adip,adim := ind.DiPlusMinus()
+
+	dx := 0.0
+	for i:=ind.period; i<2*ind.period; i++ {
+		dx += 100*math.Abs(adip[i] - adim[i]) / (adip[i] + adim[i])
+	}
+	dx /= float64(ind.period)
+
+	adx := make([]float64, len(ind.input.Close))
+	adx[2*ind.period-1] = dx
+	for i:=2*ind.period; i<len(ind.input.Close); i++ {
+		adx[i] = (adx[i-1] * float64(ind.period-1) + 100*math.Abs(adip[i] - adim[i]) / (adip[i] + adim[i])) / float64(ind.period)
+	}
+
+	return adx
+}
+
+
+func (ind *AverageDirectionalIndex) DiPlusMinus() ([]float64, []float64) {
+	if len(ind.input.Close) < ind.period {
 		return nil,nil
 	}
 
-	dp := make([]float64, len(input.Close))
-	dm := make([]float64, len(input.Close))
+	dp := make([]float64, len(ind.input.Close))
+	dm := make([]float64, len(ind.input.Close))
 
-	tr := TR(input)
+	tr := TR(ind.input).Compute()
 
-	for i:=1; i<len(input.Close); i++ {
+	for i:=1; i<len(ind.input.Close); i++ {
 
-		upMove := input.High[i] - input.High[i-1]
-		downMove := input.Low[i-1] - input.Low[i]
+		upMove := ind.input.High[i] - ind.input.High[i-1]
+		downMove := ind.input.Low[i-1] - ind.input.Low[i]
 
 		if upMove > downMove && upMove > 0{
 			dp[i] = upMove 
@@ -33,7 +69,7 @@ func DiPlusMinus(input BarHistory, period int) ([]float64, []float64) {
 	dim := 0.0
 	trp := 0.0
 
-	for i:=0; i<period; i++ {
+	for i:=0; i<ind.period; i++ {
 		dip += dp[i]
 		dim += dm[i]
 		trp += tr[i]
@@ -43,10 +79,10 @@ func DiPlusMinus(input BarHistory, period int) ([]float64, []float64) {
 	pdm := dim
 	ptr := trp
 
-	for i:=period; i<len(input.Close); i++ {
-		adp := pdp - pdp/float64(period) + dp[i]
-		adm := pdm - pdm/float64(period) + dm[i]
-		atr := ptr - ptr/float64(period) + tr[i]
+	for i:=ind.period; i<len(ind.input.Close); i++ {
+		adp := pdp - pdp/float64(ind.period) + dp[i]
+		adm := pdm - pdm/float64(ind.period) + dm[i]
+		atr := ptr - ptr/float64(ind.period) + tr[i]
 
 		dp[i] = math.Round(100.0 * adp / atr)
 		dm[i] = math.Round(100.0 * adm / atr)
@@ -58,27 +94,4 @@ func DiPlusMinus(input BarHistory, period int) ([]float64, []float64) {
 
 	return dp, dm
 
-}
-
-// Calculate Average Directional Index (ADX)
-func ADX(input BarHistory, period int) []float64 {
-	if len(input.Close) < period {
-		return nil
-	}
-
-	adip,adim := DiPlusMinus(input, period)
-
-	dx := 0.0
-	for i:=period; i<2*period; i++ {
-		dx += 100*math.Abs(adip[i] - adim[i]) / (adip[i] + adim[i])
-	}
-	dx /= float64(period)
-
-	adx := make([]float64, len(input.Close))
-	adx[2*period-1] = dx
-	for i:=2*period; i<len(input.Close); i++ {
-		adx[i] = (adx[i-1] * float64(period-1) + 100*math.Abs(adip[i] - adim[i]) / (adip[i] + adim[i])) / float64(period)
-	}
-
-	return adx
 }

@@ -1,13 +1,24 @@
 package indicators
 
-func RSL(in []float64, period int) ([]float64,error) {
-	err := CheckInput(in, period)
+type RelativeStrengthLevy struct {
+	TimeSeriesIndicator
+}
+
+func RSL(input []float64, period int) *RelativeStrengthLevy {
+	return &RelativeStrengthLevy{
+		TimeSeriesIndicator: NewTimeSeriesIndicator(input,period),
+	}
+}
+
+
+func (ind *RelativeStrengthLevy) Compute() ([]float64,error) {
+	err := CheckInput(ind.input, ind.period)
 	if err != nil {
 		return nil, err
 	}
-	res := make([]float64, len(in))
-	for i := period; i<len(in); i++ {
-		res[i] = in[i]/Mean(in[i-period:i+1])
+	res := make([]float64, len(ind.input))
+	for i := ind.period; i<len(ind.input); i++ {
+		res[i] = ind.input[i]/Mean(ind.input[i-ind.period:i+1])
 	}
 	return res, nil
 }

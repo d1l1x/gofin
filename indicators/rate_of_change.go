@@ -1,10 +1,20 @@
 package indicators
 
-func ROC(prices []float64, period int) []float64 {
-	roc := make([]float64, len(prices))
+func ROC(input []float64, period int) *RateOfChange {
+	return &RateOfChange{
+		TimeSeriesIndicator: NewTimeSeriesIndicator(input, period),
+	}
+}
 
-	for i := period; i < len(prices); i++ {
-		roc[i] = ((prices[i] - prices[i-period]) / prices[i-period]) * 100
+type RateOfChange struct {
+	TimeSeriesIndicator
+}
+
+func (ind *RateOfChange) Compute() []float64 {
+	roc := make([]float64, len(ind.input))
+
+	for i := ind.period; i < len(ind.input); i++ {
+		roc[i] = ((ind.input[i] - ind.input[i-ind.period]) / ind.input[i-ind.period]) * 100
 	}
 
 	return roc

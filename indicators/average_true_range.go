@@ -4,32 +4,65 @@ import (
 	"math"
 )
 
-func TR(bars BarHistory) []float64 {
-	tr  := make([]float64, len(bars.Close))
-	tr[0] = bars.High[0] - bars.Low[0]
-	for i:=1; i<len(bars.Close); i++ {
-		highLow := bars.High[i] - bars.Low[i]
-		highClose := math.Abs(bars.High[i] - bars.Close[i-1])
-		lowClose := math.Abs(bars.Low[i] - bars.Close[i-1])
-		tr[i] = math.Max(highLow, math.Max(highClose, lowClose))
-	}
-	return tr
+type AverageTrueRange struct {
+	BarHistoryIndicator
 }
 
-func ATR(input BarHistory, period int) []float64 {
-	if len(input.Close) < period || len(input.High) < period || len(input.Low) < period {
+func ATR(bars BarHistory, period int) *AverageTrueRange {
+	return &AverageTrueRange{
+		BarHistoryIndicator: NewBarHistoryIndicator(bars,period),
+	}
+}
+
+type TrueRange struct {
+	BarHistoryIndicator
+}
+
+func TR(bars BarHistory) *TrueRange {
+	return &TrueRange{
+		BarHistoryIndicator: NewBarHistoryIndicator(bars,0),
+	}
+}
+
+type TrueRangePercent struct {
+	BarHistoryIndicator
+}
+
+func ATRP(bars BarHistory, period int) *TrueRangePercent {
+	return &TrueRangePercent{
+		BarHistoryIndicator: NewBarHistoryIndicator(bars,period),
+	}
+}
+
+
+func (ind *AverageTrueRange) Compute() []float64 {
+	if len(ind.input.Close) < ind.period || len(ind.input.High) < ind.period || len(ind.input.Low) < ind.period {
 		return nil
 	}
-	tr := TR(input)
-	atr,_ := MA(tr, period, WILDER) 
+	tr := TR(ind.input)
+	trueRange := tr.Compute()
+	atr,_ := MA(trueRange, ind.period).Compute(WILDER)
 	return atr
 }
 
-func ATRP(input BarHistory, period int) []float64 {
-	atr := ATR(input, period)
+func (ind *TrueRangePercent) Compute() []float64 {
+	atr := ATR(ind.input, ind.period).Compute()
 	res := make([]float64, len(atr))
 	for i, val := range atr {
-		res[i] = val / input.Close[i] * 100
+		res[i] = val / ind.input.Close[i] * 100
 	}
     return res
+}
+
+
+func (ind *TrueRange) Compute() []float64 {
+	tr  := make([]float64, len(ind.input.Close))
+	tr[0] = ind.input.High[0] - ind.input.Low[0]
+	for i:=1; i<len(ind.input.Close); i++ {
+		highLow := ind.input.High[i] - ind.input.Low[i]
+		highClose := math.Abs(ind.input.High[i] - ind.input.Close[i-1])
+		lowClose := math.Abs(ind.input.Low[i] - ind.input.Close[i-1])
+		tr[i] = math.Max(highLow, math.Max(highClose, lowClose))
+	}
+	return tr
 }
