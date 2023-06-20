@@ -2,16 +2,16 @@ package indicators
 
 func RSI(input []float64, period int) *RelativeStrengthIndex {
 	return &RelativeStrengthIndex{
-		Indicator: NewIndicator(input,period),
+		TimeSeriesIndicator: NewTimeSeriesIndicator(input,period),
 	}
 }
 
 type RelativeStrengthIndex struct {
-	Indicator
+	TimeSeriesIndicator
 }
 
-//Calculate Relative Strength Index (RSI)
 func (ind *RelativeStrengthIndex) Compute() []float64 {
+
 	if len(ind.input) < ind.period {
 		return nil
 	}

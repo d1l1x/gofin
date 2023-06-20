@@ -2,12 +2,12 @@ package indicators
 
 func ROC(input []float64, period int) *RateOfChange {
 	return &RateOfChange{
-		Indicator: NewIndicator(input,period),
+		TimeSeriesIndicator: NewTimeSeriesIndicator(input, period),
 	}
 }
 
 type RateOfChange struct {
-	Indicator
+	TimeSeriesIndicator
 }
 
 func (ind *RateOfChange) Compute() []float64 {
