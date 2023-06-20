@@ -8,20 +8,41 @@ type BarHistory struct {
 	Volume []int64
 }
 
-type Indicator struct {
-	input []float64
+type GeneralIndicator struct {
 	values []float64
 	period int
 }
 
-func (i *Indicator) Last() float64 {
-	return i.values[len(i.values)-1]
+type TimeSeriesIndicator struct {
+	input []float64
+	GeneralIndicator
 }
 
-func NewIndicator(input []float64, period int) Indicator {
-	return Indicator{
-		input: input, // or some other initial values
-		values: []float64{}, // or some other initial values
-		period: period,
+type BarHistoryIndicator struct {
+	input BarHistory
+	GeneralIndicator
+}
+
+func NewTimeSeriesIndicator(input []float64, period int) TimeSeriesIndicator {
+	return TimeSeriesIndicator{
+		input: input,	
+		GeneralIndicator: GeneralIndicator{
+			values: []float64{}, 
+			period: period,
+		},
 	}
+}
+
+func NewBarHistoryIndicator(input BarHistory, period int) BarHistoryIndicator {
+	return BarHistoryIndicator{
+		input: input,	
+		GeneralIndicator: GeneralIndicator{
+			values: []float64{}, 
+			period: period,
+		},
+	}
+}
+
+func (i *GeneralIndicator) Last() float64 {
+	return i.values[len(i.values)-1]
 }
