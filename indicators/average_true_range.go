@@ -41,7 +41,7 @@ func (ind *AverageTrueRange) Compute() []float64 {
 	}
 	tr := TR(ind.input)
 	trueRange := tr.Compute()
-	atr,_ := MA(trueRange, ind.period, WILDER) 
+	atr,_ := MA(trueRange, ind.period).Compute(WILDER)
 	return atr
 }
 

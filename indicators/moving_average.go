@@ -11,8 +11,18 @@ const (
 	WILDER
 )
 
-func MA(input []float64, period int, matype maType) ([]float64, error) {
-	 err := CheckInput(input, period)
+type MovingAverage struct {
+	TimeSeriesIndicator
+}
+
+func MA(input []float64, period int) *MovingAverage {
+	return &MovingAverage{
+		TimeSeriesIndicator: NewTimeSeriesIndicator(input, period),
+	}
+}
+
+func (ind *MovingAverage) Compute(matype maType) ([]float64, error) {
+	 err := CheckInput(ind.input, ind.period)
 	 if err != nil {
 		return nil, err
 	 }
@@ -20,21 +30,21 @@ func MA(input []float64, period int, matype maType) ([]float64, error) {
 	var weights []float64
 	switch matype {
 	case SMA: 
-		weights = computeSwmaWeights(period)
-		return wma(input, weights), nil
+		weights = ind.computeSwmaWeights(ind.period)
+		return ind.wma(ind.input, weights), nil
 	case LWMA:
-		weights = computeLwmaWeights(period)
-		return wma(input, weights), nil
+		weights = ind.computeLwmaWeights(ind.period)
+		return ind.wma(ind.input, weights), nil
 	case EMA:
-		return ema(input, period), nil
+		return ind.ema(ind.input, ind.period), nil
 	case WILDER:
-		return wilder(input, period), nil
+		return ind.wilder(ind.input, ind.period), nil
 	default:
 		return nil, fmt.Errorf("moving average type not yet implemented.: %d", matype)
 	}
 }
 
-func computeSwmaWeights(period int) []float64 {
+func (ind *MovingAverage) computeSwmaWeights(period int) []float64 {
 	weights := make([]float64, period)
 	b := float64(period)
 	for i := range weights {
@@ -43,7 +53,7 @@ func computeSwmaWeights(period int) []float64 {
 	return weights
 }
 
-func computeLwmaWeights(period int) []float64 {
+func (ind *MovingAverage) computeLwmaWeights(period int) []float64 {
 	weights := make([]float64, period)
 	b := float64(period)*(float64(period)+1.0)/2.0
 	for i := range weights {
@@ -52,9 +62,9 @@ func computeLwmaWeights(period int) []float64 {
 	return weights
 }
 
-func ema(input []float64, period int) []float64 {
-	weights := computeSwmaWeights(period)
-	res := wma(input, weights)
+func (ind *MovingAverage) ema(input []float64, period int) []float64 {
+	weights := ind.computeSwmaWeights(period)
+	res := ind.wma(input, weights)
 	alpha := 2.0/(float64(period) + 1)
 	res[0] = input[0]
 	// y_(i+1) = y_i + alpha * (x_(i+1) i y_i)
@@ -64,7 +74,7 @@ func ema(input []float64, period int) []float64 {
 	return res
 }
 
-func wma(input []float64, weights []float64) []float64 {
+func (ind *MovingAverage) wma(input []float64, weights []float64) []float64 {
 	res := make([]float64, len(input))
 	for i := range input {
 		if i+1 >= len(weights) {
@@ -77,7 +87,7 @@ func wma(input []float64, weights []float64) []float64 {
 }
 
 
-func wilder(input []float64, period int) []float64 {
+func (ind *MovingAverage) wilder(input []float64, period int) []float64 {
 	res := make([]float64, len(input))
 
 	// Calculate the first WilderMA value
