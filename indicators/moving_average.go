@@ -22,7 +22,7 @@ func MA(input []float64, period int) *MovingAverage {
 }
 
 func (ind *MovingAverage) Compute(matype maType) ([]float64, error) {
-	err := CheckInput(ind.input, ind.period)
+	err := CheckInput(ind.input, ind.Period)
 	if err != nil {
 		return nil, err
 	}
@@ -30,15 +30,15 @@ func (ind *MovingAverage) Compute(matype maType) ([]float64, error) {
 	var weights []float64
 	switch matype {
 	case SMA:
-		weights = ind.computeSwmaWeights(ind.period)
+		weights = ind.computeSwmaWeights(ind.Period)
 		return ind.wma(ind.input, weights), nil
 	case LWMA:
-		weights = ind.computeLwmaWeights(ind.period)
+		weights = ind.computeLwmaWeights(ind.Period)
 		return ind.wma(ind.input, weights), nil
 	case EMA:
-		return ind.ema(ind.input, ind.period), nil
+		return ind.ema(ind.input, ind.Period), nil
 	case WILDER:
-		return ind.wilder(ind.input, ind.period), nil
+		return ind.wilder(ind.input, ind.Period), nil
 	default:
 		return nil, fmt.Errorf("moving average type not yet implemented.: %d", matype)
 	}
