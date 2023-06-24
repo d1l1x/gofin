@@ -8,9 +8,13 @@ type BarHistory struct {
 	Volume []int64
 }
 
+type Indicator interface {
+	Compute() []float64
+}
+
 type GeneralIndicator struct {
-	values []float64
-	period int
+	Values []float64
+	Period int
 }
 
 type TimeSeriesIndicator struct {
@@ -27,8 +31,8 @@ func NewTimeSeriesIndicator(input []float64, period int) TimeSeriesIndicator {
 	return TimeSeriesIndicator{
 		input: input,
 		GeneralIndicator: GeneralIndicator{
-			values: []float64{},
-			period: period,
+			Values: []float64{},
+			Period: period,
 		},
 	}
 }
@@ -37,12 +41,8 @@ func NewBarHistoryIndicator(input BarHistory, period int) BarHistoryIndicator {
 	return BarHistoryIndicator{
 		input: input,
 		GeneralIndicator: GeneralIndicator{
-			values: []float64{},
-			period: period,
+			Values: []float64{},
+			Period: period,
 		},
 	}
-}
-
-func (i *GeneralIndicator) Last() float64 {
-	return i.values[len(i.values)-1]
 }

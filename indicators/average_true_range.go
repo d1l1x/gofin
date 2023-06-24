@@ -35,17 +35,17 @@ func ATRP(bars BarHistory, period int) *TrueRangePercent {
 }
 
 func (ind *AverageTrueRange) Compute() []float64 {
-	if len(ind.input.Close) < ind.period || len(ind.input.High) < ind.period || len(ind.input.Low) < ind.period {
+	if len(ind.input.Close) < ind.Period || len(ind.input.High) < ind.Period || len(ind.input.Low) < ind.Period {
 		return nil
 	}
 	tr := TR(ind.input)
 	trueRange := tr.Compute()
-	atr, _ := MA(trueRange, ind.period).Compute(WILDER)
+	atr, _ := MA(trueRange, ind.Period).Compute(WILDER)
 	return atr
 }
 
 func (ind *TrueRangePercent) Compute() []float64 {
-	atr := ATR(ind.input, ind.period).Compute()
+	atr := ATR(ind.input, ind.Period).Compute()
 	res := make([]float64, len(atr))
 	for i, val := range atr {
 		res[i] = val / ind.input.Close[i] * 100

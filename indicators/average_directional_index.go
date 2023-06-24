@@ -16,29 +16,29 @@ func ADX(bars BarHistory, period int) *AverageDirectionalIndex {
 
 // Calculate Average Directional Index (ADX)
 func (ind *AverageDirectionalIndex) Compute() []float64 {
-	if len(ind.input.Close) < ind.period {
+	if len(ind.input.Close) < ind.Period {
 		return nil
 	}
 
 	adip, adim := ind.DiPlusMinus()
 
 	dx := 0.0
-	for i := ind.period; i < 2*ind.period; i++ {
+	for i := ind.Period; i < 2*ind.Period; i++ {
 		dx += 100 * math.Abs(adip[i]-adim[i]) / (adip[i] + adim[i])
 	}
-	dx /= float64(ind.period)
+	dx /= float64(ind.Period)
 
 	adx := make([]float64, len(ind.input.Close))
-	adx[2*ind.period-1] = dx
-	for i := 2 * ind.period; i < len(ind.input.Close); i++ {
-		adx[i] = (adx[i-1]*float64(ind.period-1) + 100*math.Abs(adip[i]-adim[i])/(adip[i]+adim[i])) / float64(ind.period)
+	adx[2*ind.Period-1] = dx
+	for i := 2 * ind.Period; i < len(ind.input.Close); i++ {
+		adx[i] = (adx[i-1]*float64(ind.Period-1) + 100*math.Abs(adip[i]-adim[i])/(adip[i]+adim[i])) / float64(ind.Period)
 	}
 
 	return adx
 }
 
 func (ind *AverageDirectionalIndex) DiPlusMinus() ([]float64, []float64) {
-	if len(ind.input.Close) < ind.period {
+	if len(ind.input.Close) < ind.Period {
 		return nil, nil
 	}
 
@@ -66,7 +66,7 @@ func (ind *AverageDirectionalIndex) DiPlusMinus() ([]float64, []float64) {
 	dim := 0.0
 	trp := 0.0
 
-	for i := 0; i < ind.period; i++ {
+	for i := 0; i < ind.Period; i++ {
 		dip += dp[i]
 		dim += dm[i]
 		trp += tr[i]
@@ -76,10 +76,10 @@ func (ind *AverageDirectionalIndex) DiPlusMinus() ([]float64, []float64) {
 	pdm := dim
 	ptr := trp
 
-	for i := ind.period; i < len(ind.input.Close); i++ {
-		adp := pdp - pdp/float64(ind.period) + dp[i]
-		adm := pdm - pdm/float64(ind.period) + dm[i]
-		atr := ptr - ptr/float64(ind.period) + tr[i]
+	for i := ind.Period; i < len(ind.input.Close); i++ {
+		adp := pdp - pdp/float64(ind.Period) + dp[i]
+		adm := pdm - pdm/float64(ind.Period) + dm[i]
+		atr := ptr - ptr/float64(ind.Period) + tr[i]
 
 		dp[i] = math.Round(100.0 * adp / atr)
 		dm[i] = math.Round(100.0 * adm / atr)
