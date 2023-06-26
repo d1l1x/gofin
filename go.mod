@@ -5,6 +5,7 @@ go 1.20
 require (
 	github.com/alpacahq/alpaca-trade-api-go/v3 v3.0.1
 	github.com/fatih/color v1.15.0
+	github.com/rickar/cal/v2 v2.1.13
 	github.com/shopspring/decimal v1.3.1
 	github.com/sirupsen/logrus v1.9.3
 )
