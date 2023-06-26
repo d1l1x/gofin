@@ -25,9 +25,9 @@ type BarHistoryIndicator struct {
 
 func NewTimeSeriesIndicator(input []float64, period int) TimeSeriesIndicator {
 	return TimeSeriesIndicator{
-		input: input,	
+		input: input,
 		GeneralIndicator: GeneralIndicator{
-			values: []float64{}, 
+			values: []float64{},
 			period: period,
 		},
 	}
@@ -35,9 +35,9 @@ func NewTimeSeriesIndicator(input []float64, period int) TimeSeriesIndicator {
 
 func NewBarHistoryIndicator(input BarHistory, period int) BarHistoryIndicator {
 	return BarHistoryIndicator{
-		input: input,	
+		input: input,
 		GeneralIndicator: GeneralIndicator{
-			values: []float64{}, 
+			values: []float64{},
 			period: period,
 		},
 	}

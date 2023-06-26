@@ -10,7 +10,7 @@ type AverageTrueRange struct {
 
 func ATR(bars BarHistory, period int) *AverageTrueRange {
 	return &AverageTrueRange{
-		BarHistoryIndicator: NewBarHistoryIndicator(bars,period),
+		BarHistoryIndicator: NewBarHistoryIndicator(bars, period),
 	}
 }
 
@@ -20,7 +20,7 @@ type TrueRange struct {
 
 func TR(bars BarHistory) *TrueRange {
 	return &TrueRange{
-		BarHistoryIndicator: NewBarHistoryIndicator(bars,0),
+		BarHistoryIndicator: NewBarHistoryIndicator(bars, 0),
 	}
 }
 
@@ -30,10 +30,9 @@ type TrueRangePercent struct {
 
 func ATRP(bars BarHistory, period int) *TrueRangePercent {
 	return &TrueRangePercent{
-		BarHistoryIndicator: NewBarHistoryIndicator(bars,period),
+		BarHistoryIndicator: NewBarHistoryIndicator(bars, period),
 	}
 }
-
 
 func (ind *AverageTrueRange) Compute() []float64 {
 	if len(ind.input.Close) < ind.period || len(ind.input.High) < ind.period || len(ind.input.Low) < ind.period {
@@ -41,7 +40,7 @@ func (ind *AverageTrueRange) Compute() []float64 {
 	}
 	tr := TR(ind.input)
 	trueRange := tr.Compute()
-	atr,_ := MA(trueRange, ind.period).Compute(WILDER)
+	atr, _ := MA(trueRange, ind.period).Compute(WILDER)
 	return atr
 }
 
@@ -51,14 +50,13 @@ func (ind *TrueRangePercent) Compute() []float64 {
 	for i, val := range atr {
 		res[i] = val / ind.input.Close[i] * 100
 	}
-    return res
+	return res
 }
 
-
 func (ind *TrueRange) Compute() []float64 {
-	tr  := make([]float64, len(ind.input.Close))
+	tr := make([]float64, len(ind.input.Close))
 	tr[0] = ind.input.High[0] - ind.input.Low[0]
-	for i:=1; i<len(ind.input.Close); i++ {
+	for i := 1; i < len(ind.input.Close); i++ {
 		highLow := ind.input.High[i] - ind.input.Low[i]
 		highClose := math.Abs(ind.input.High[i] - ind.input.Close[i-1])
 		lowClose := math.Abs(ind.input.Low[i] - ind.input.Close[i-1])
