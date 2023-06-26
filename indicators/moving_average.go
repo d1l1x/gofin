@@ -22,14 +22,14 @@ func MA(input []float64, period int) *MovingAverage {
 }
 
 func (ind *MovingAverage) Compute(matype maType) ([]float64, error) {
-	 err := CheckInput(ind.input, ind.period)
-	 if err != nil {
+	err := CheckInput(ind.input, ind.period)
+	if err != nil {
 		return nil, err
-	 }
-	
+	}
+
 	var weights []float64
 	switch matype {
-	case SMA: 
+	case SMA:
 		weights = ind.computeSwmaWeights(ind.period)
 		return ind.wma(ind.input, weights), nil
 	case LWMA:
@@ -55,7 +55,7 @@ func (ind *MovingAverage) computeSwmaWeights(period int) []float64 {
 
 func (ind *MovingAverage) computeLwmaWeights(period int) []float64 {
 	weights := make([]float64, period)
-	b := float64(period)*(float64(period)+1.0)/2.0
+	b := float64(period) * (float64(period) + 1.0) / 2.0
 	for i := range weights {
 		weights[i] = (float64(period) - float64(i)) / b
 	}
@@ -65,11 +65,11 @@ func (ind *MovingAverage) computeLwmaWeights(period int) []float64 {
 func (ind *MovingAverage) ema(input []float64, period int) []float64 {
 	weights := ind.computeSwmaWeights(period)
 	res := ind.wma(input, weights)
-	alpha := 2.0/(float64(period) + 1)
+	alpha := 2.0 / (float64(period) + 1)
 	res[0] = input[0]
 	// y_(i+1) = y_i + alpha * (x_(i+1) i y_i)
-	for i:=0; i<len(input) - 1; i++ {
-		res[i + 1] = res[i] + alpha * (input[i+1] - res[i]) 
+	for i := 0; i < len(input)-1; i++ {
+		res[i+1] = res[i] + alpha*(input[i+1]-res[i])
 	}
 	return res
 }
@@ -86,7 +86,6 @@ func (ind *MovingAverage) wma(input []float64, weights []float64) []float64 {
 	return res
 }
 
-
 func (ind *MovingAverage) wilder(input []float64, period int) []float64 {
 	res := make([]float64, len(input))
 
@@ -99,7 +98,7 @@ func (ind *MovingAverage) wilder(input []float64, period int) []float64 {
 
 	// Calculate the rest of the WilderMA values
 	for i := period; i < len(input); i++ {
-		res[i] = res[i-1] + (input[i] - res[i-1]) / float64(period)
+		res[i] = res[i-1] + (input[i]-res[i-1])/float64(period)
 	}
 
 	return res
