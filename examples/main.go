@@ -21,14 +21,32 @@ func main() {
 	})
 	log.SetOutput(os.Stdout)
 
-	broker := brokers.Alpaca(nil, "")
+	// Define trading windows
+	calendar, err := gofin.NewTradingCalendarUS()
+	if err != nil {
+		log.Fatalf("trading calendar: %v", err)
+	}
+	nextDayOnOpen := calendar.NextDayOnOpen(time.Now())
+	if err != nil {
+		log.Fatalf("next day on open: %v", err)
+	}
+	nextDayOnClose := calendar.NextDayOnClose(time.Now())
+	if err != nil {
+		log.Fatalf("next day on close: %v", err)
+	}
+
+	log.Infof("next day on open: %v", nextDayOnOpen)
+	log.Infof("next day on open: %v", nextDayOnClose)
+
+	// Define broker
+	broker := brokers.Alpaca(nil, "", logrus.DebugLevel)
 
 	for {
 		isOpen, err := broker.IsMarketOpen()
 		if err != nil {
 			log.Errorf("is market open: %v", err)
 		}
-		if !isOpen {
+		if isOpen {
 			buyingPower, err := broker.BuyingPower()
 			if err != nil {
 				log.Errorf("buying power: %v", err)
@@ -43,7 +61,7 @@ func main() {
 				log.Infof("cash: %v", cash)
 			}
 
-			positions, err := broker.OpenPositions()
+			positions, err := broker.GetOpenPositions()
 			if err != nil {
 				log.Errorf("number of open positions: %v", err)
 			} else {
@@ -59,7 +77,7 @@ func main() {
 
 			time.Sleep(30 * time.Second)
 
-			orders, err := broker.OpenOrders()
+			orders, err := broker.GetOpenOrders()
 			if err != nil {
 				log.Errorf("number of open orders: %v", err)
 			} else {
@@ -77,11 +95,42 @@ func main() {
 
 			time.Sleep(30 * time.Second)
 
-			orders, err = broker.OpenOrders()
+			orders, err = broker.GetOpenOrders()
 			if err != nil {
 				log.Errorf("number of open orders: %v", err)
 			} else {
 				log.Infof("number of open orders: %v", len(orders))
+			}
+
+			assets, err := broker.GetListOfAssets("", "", "", true)
+			if err != nil {
+				log.Errorf("list of assets: %v", err)
+			} else {
+				log.Infof("list of assets: %v", len(assets))
+			}
+			tradableAssets := 0
+			for _, asset := range assets {
+				if asset.Tradable {
+					tradableAssets++
+				}
+			}
+			log.Infof("tradable assets: %v", tradableAssets)
+
+			shortableAssets := 0
+			for _, asset := range assets {
+				if asset.Shortable {
+					shortableAssets++
+				}
+			}
+			log.Infof("tradable assets: %v", shortableAssets)
+
+			bars, err := broker.GetSymbolBars("AAPL", 200)
+			if err != nil {
+				log.Errorf("bars: %v", err)
+			} else {
+				for i, bar := range bars {
+					log.Infof("bar %v: %v", i, bar)
+				}
 			}
 
 			time.Sleep(1 * time.Minute)
