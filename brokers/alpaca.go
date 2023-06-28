@@ -27,7 +27,7 @@ type AlpacaCredentials struct {
 	ApiSecret string
 }
 
-func Alpaca(credentials *AlpacaCredentials, baseUrl string) *AlpacaBroker {
+func Alpaca(credentials *AlpacaCredentials, baseUrl string, logLevel logrus.Level) *AlpacaBroker {
 
 	log.SetFormatter(&gofin.PrefixedFormatter{
 		Prefix:    "Alpaca",
@@ -35,6 +35,7 @@ func Alpaca(credentials *AlpacaCredentials, baseUrl string) *AlpacaBroker {
 		Formatter: &logrus.TextFormatter{},
 	})
 	log.SetOutput(os.Stdout)
+	log.SetLevel(logLevel)
 
 	if baseUrl == "" {
 		baseUrl = basePaperURL
@@ -72,13 +73,13 @@ func Alpaca(credentials *AlpacaCredentials, baseUrl string) *AlpacaBroker {
 func (broker *AlpacaBroker) IsMarketOpen() (bool, error) {
 	clock, err := broker.trade.GetClock()
 	if err != nil {
-		return false, fmt.Errorf("get clock: %w", err)
+		return false, fmt.Errorf("IsMarketOpen: %w", err)
 	}
 	if clock.IsOpen {
 		return true, nil
 	} else {
 		timeToOpen := int(clock.NextOpen.Sub(clock.Timestamp).Minutes())
-		log.Infof("%d minutes until next market open\n", timeToOpen)
+		log.Debugf("%d minutes until next market open\n", timeToOpen)
 	}
 	return false, nil
 }
@@ -86,7 +87,7 @@ func (broker *AlpacaBroker) IsMarketOpen() (bool, error) {
 func (broker *AlpacaBroker) BuyingPower() (float64, error) {
 	account, err := broker.trade.GetAccount()
 	if err != nil {
-		return 0, fmt.Errorf("get account: %w", err)
+		return 0, fmt.Errorf("BuyingPower: %w", err)
 	}
 	res, _ := account.BuyingPower.Float64()
 	return res, nil
@@ -95,27 +96,35 @@ func (broker *AlpacaBroker) BuyingPower() (float64, error) {
 func (broker *AlpacaBroker) Cash() (float64, error) {
 	account, err := broker.trade.GetAccount()
 	if err != nil {
-		return 0, fmt.Errorf("get account: %w", err)
+		return 0, fmt.Errorf("Cash: %w", err)
 	}
 	res, _ := account.Cash.Float64()
 	return res, nil
 }
 
-func (broker *AlpacaBroker) OpenPositions() ([]alpaca.Position, error) {
+func (broker *AlpacaBroker) GetOpenPositions() ([]alpaca.Position, error) {
 	positions, err := broker.trade.GetPositions()
 	if err != nil {
-		return nil, fmt.Errorf("list positions: %w", err)
+		return nil, fmt.Errorf("GetOpenPositions: %w", err)
 	}
 	return positions, nil
 }
 
-func (broker *AlpacaBroker) OpenOrders() ([]alpaca.Order, error) {
+func (broker *AlpacaBroker) GetOpenPosition(symbol string) (*alpaca.Position, error) {
+	position, err := broker.trade.GetPosition(symbol)
+	if err != nil {
+		return nil, fmt.Errorf("GetOpenPosition: %w", err)
+	}
+	return position, nil
+}
+
+func (broker *AlpacaBroker) GetOpenOrders() ([]alpaca.Order, error) {
 	orders, err := broker.trade.GetOrders(alpaca.GetOrdersRequest{
 		Status: "open",
 		Until:  time.Now(),
 	})
 	if err != nil {
-		return nil, fmt.Errorf("get open orders: %w", err)
+		return nil, fmt.Errorf("GetOpenOrders: %w", err)
 	}
 	return orders, nil
 }
@@ -123,7 +132,7 @@ func (broker *AlpacaBroker) OpenOrders() ([]alpaca.Order, error) {
 func (broker *AlpacaBroker) CancelOrder(orderId string) error {
 	err := broker.trade.CancelOrder(orderId)
 	if err != nil {
-		return fmt.Errorf("cancel order: %w", err)
+		return fmt.Errorf("CancelOrder: %w", err)
 	}
 	return nil
 }
@@ -140,9 +149,49 @@ func (broker *AlpacaBroker) LimitOrder(side alpaca.Side, symbol string, quantity
 		TimeInForce: timeInForce,
 	})
 	if err == nil {
-		log.Infof("limit order placed: %s", order.ID)
+		log.Infof("Limit order placed: %s", order.ID)
 	} else {
-		log.Warnf("limit order failed: %s", err.Error())
+		log.Warnf("Limit order failed: %s", err.Error())
 	}
 	return order.ID, nil
+}
+
+func (broker *AlpacaBroker) GetListOfAssets(status, class, exchange string, tradable bool) ([]alpaca.Asset, error) {
+	if status == "" {
+		status = "active"
+	}
+	if class == "" {
+		class = "us_equity"
+	}
+	allAssets, err := broker.trade.GetAssets(alpaca.GetAssetsRequest{
+		Status:     status,
+		AssetClass: class,
+		Exchange:   exchange,
+	})
+	tradableAsset := make([]alpaca.Asset, 0)
+	if tradable {
+		for _, asset := range allAssets {
+			if !asset.Tradable {
+				continue
+			}
+			tradableAsset = append(tradableAsset, asset)
+		}
+	}
+	if err != nil {
+		return nil, fmt.Errorf("GetListOfAssets: %w", err)
+	}
+	return tradableAsset, nil
+}
+
+func (broker *AlpacaBroker) GetSymbolBars(symbol string, period int) ([]marketdata.Bar, error) {
+	//businessDay := broker.calendar.calendar.lastBusinessDay(time.Now())
+	bars, err := broker.data.GetBars(symbol, marketdata.GetBarsRequest{
+		TimeFrame: marketdata.OneDay,
+		Start:     time.Now().AddDate(0, 0, -period),
+		End:       time.Now(),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("GetSymbolBars: %s", err.Error())
+	}
+	return bars, nil
 }
