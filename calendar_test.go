@@ -5,67 +5,8 @@ import (
 	"time"
 )
 
-func TestNewTradingCalendar(t *testing.T) {
-	// Define a start and end time for the trading windows
-	start := time.Date(2023, 6, 18, 9, 30, 0, 0, time.UTC)
-	end := time.Date(2023, 6, 18, 16, 0, 0, 0, time.UTC)
-
-	// Create a new trading calendar
-	calendar, _ := NewTradingCalendar(TradingWindow{Start: start, End: end}, TradingWindow{Start: start, End: end})
-
-	// Check if the calendar was created correctly
-	if calendar.OpenWindow.Start != start || calendar.OpenWindow.End != end {
-		t.Errorf("NewTradingCalendar() failed, expected %v and %v, got %v and %v", start, end, calendar.OpenWindow.Start, calendar.OpenWindow.End)
-	}
-}
-
-func TestNewTradingCalendarOpeningWindowWrongLocation(t *testing.T) {
-	// Test Opening window
-	start := time.Date(2023, 6, 18, 9, 30, 0, 0, time.UTC)
-
-	location, _ := time.LoadLocation("America/New_York")
-	end := time.Date(2023, 6, 18, 16, 0, 0, 0, location)
-
-	_, err := NewTradingCalendar(TradingWindow{Start: start, End: end}, TradingWindow{})
-
-	if err == nil {
-		t.Errorf("NewTradingCalendar() expected an error for opening window, got nil")
-	}
-}
-
-func TestNewTradingCalendarClosingWindowWrongLocation(t *testing.T) {
-	// Test Closing window
-	start := time.Date(2023, 6, 18, 9, 30, 0, 0, time.UTC)
-
-	location, _ := time.LoadLocation("America/New_York")
-	end := time.Date(2023, 6, 18, 16, 0, 0, 0, location)
-
-	_, err := NewTradingCalendar(TradingWindow{}, TradingWindow{Start: start, End: end})
-
-	if err == nil {
-		t.Errorf("NewTradingCalendar() expected an error for closing window, got nil")
-	}
-}
-
-func TestNewTradingCalendarOpeningClosingWindowWrongLocation(t *testing.T) {
-	// Test Opening-Closing window
-	startOpen := time.Date(2023, 6, 18, 9, 30, 0, 0, time.UTC)
-	endOpen := time.Date(2023, 6, 18, 9, 30, 0, 0, time.UTC)
-
-	location, _ := time.LoadLocation("America/New_York")
-	startClose := time.Date(2023, 6, 18, 16, 0, 0, 0, location)
-	endClose := time.Date(2023, 6, 18, 16, 0, 0, 0, location)
-
-	_, err := NewTradingCalendar(TradingWindow{Start: startOpen, End: endOpen},
-		TradingWindow{Start: startClose, End: endClose})
-
-	if err == nil {
-		t.Errorf("NewTradingCalendar() expected an error opening-closing window, got nil")
-	}
-}
-
-func TestIsTradingDay(t *testing.T) {
-	calendar, _ := NewTradingCalendar(TradingWindow{}, TradingWindow{})
+func TestIsTradingDayUS(t *testing.T) {
+	calendar, _ := NewTradingCalendarUS()
 
 	// Test again holiday Juneteenth
 	testTime := time.Date(2023, 6, 19, 10, 0, 0, 0, time.UTC)
@@ -91,85 +32,94 @@ func TestIsTradingDay(t *testing.T) {
 }
 
 func TestNextDayOnOpen(t *testing.T) {
-	// Define a start and end time for the trading windows
-	start := time.Date(2023, 6, 19, 9, 30, 0, 0, time.UTC)
-	end := time.Date(2023, 6, 19, 16, 0, 0, 0, time.UTC)
+	calendar, _ := NewTradingCalendarUS()
 
-	// Create a new trading calendar with just an Open window
-	calendar, _ := NewTradingCalendar(TradingWindow{Start: start, End: end}, TradingWindow{})
+	location, _ := time.LoadLocation("Europe/Berlin")
 
-	// Get the next trading window
-	nextDayWindow, _ := calendar.NextDayOnOpen(start)
+	testTime := time.Date(2023, 6, 28, 0, 0, 0, 0, location)
+	nextDayWindow := calendar.NextDayOnOpen(testTime)
 
-	// Check if the next trading window is correct
-	if !nextDayWindow.Start.Equal(calendar.OpenWindow.Start.AddDate(0, 0, 1)) {
-		t.Errorf("NextDayOnOpen() failed, Start stamp not correct")
+	if nextDayWindow.Start.Day() != 29 {
+		t.Errorf("NextDayOnClose() Start failed, expected 29, got %d", nextDayWindow.Start.Day())
 	}
-	if !nextDayWindow.End.Equal(calendar.OpenWindow.End.AddDate(0, 0, 1)) {
-		t.Errorf("NextDayOnOpen() failed, End stamp not correct")
+
+	if nextDayWindow.End.Day() != 29 {
+		t.Errorf("NextDayOnClose() End failed, expected 29, got %d", nextDayWindow.End.Day())
 	}
-}
 
-func TestNextDayOnOpenWrongLocation(t *testing.T) {
-	// Define a start and end time for the trading windows
-	start := time.Date(2023, 6, 19, 9, 30, 0, 0, time.UTC)
-	end := time.Date(2023, 6, 19, 16, 0, 0, 0, time.UTC)
+	if nextDayWindow.Location != location {
+		t.Errorf("NextDayOnClose() Location failed, expected %s, got %s", location, nextDayWindow.Location)
+	}
 
-	// Create a new trading calendar with just an Open window
-	calendar, _ := NewTradingCalendar(TradingWindow{Start: start, End: end}, TradingWindow{})
+	// compare starting hour and minute
+	if calendar.OnOpen.Start.Hour() != nextDayWindow.Start.In(calendar.OnOpen.Location).Hour() {
+		t.Errorf("NextDayOnClose() Start Hour failed, expected %d, got %d", calendar.OnOpen.Start.Hour(),
+			nextDayWindow.Start.In(calendar.OnOpen.Location).Hour())
+	}
 
-	location, _ := time.LoadLocation("America/New_York")
-	testTime := time.Date(2023, 6, 18, 10, 0, 0, 0, location)
-	// Get the next trading window
-	_, err := calendar.NextDayOnOpen(testTime)
+	if calendar.OnOpen.Start.Minute() != nextDayWindow.Start.In(calendar.OnOpen.Location).Minute() {
+		t.Errorf("NextDayOnClose() Start Minute failed, expected %d, got %d", calendar.OnOpen.Start.Minute(),
+			nextDayWindow.Start.In(calendar.OnOpen.Location).Minute())
+	}
 
-	if err == nil {
-		t.Errorf("NextDayOnOpen() expected an error, got nil")
+	// compare ending hour and minute
+	if calendar.OnOpen.End.Hour() != nextDayWindow.End.In(calendar.OnOpen.Location).Hour() {
+		t.Errorf("NextDayOnClose() End Hour failed, expected %d, got %d", calendar.OnOpen.End.Hour(),
+			nextDayWindow.End.In(calendar.OnOpen.Location).Hour())
+	}
+
+	if calendar.OnOpen.End.Minute() != nextDayWindow.End.In(calendar.OnOpen.Location).Minute() {
+		t.Errorf("NextDayOnClose() End Minute failed, expected %d, got %d", calendar.OnOpen.End.Minute(),
+			nextDayWindow.End.In(calendar.OnOpen.Location).Minute())
 	}
 }
 
 func TestNextDayOnClose(t *testing.T) {
-	// Define a start and end time for the trading windows
-	start := time.Date(2023, 6, 19, 9, 30, 0, 0, time.UTC)
-	end := time.Date(2023, 6, 19, 16, 0, 0, 0, time.UTC)
+	calendar, _ := NewTradingCalendarUS()
 
-	// Create a new trading calendar with just an Open window
-	calendar, _ := NewTradingCalendar(TradingWindow{}, TradingWindow{Start: start, End: end})
+	location, _ := time.LoadLocation("Europe/Berlin")
 
-	// Get the next trading window
-	nextDayWindow, _ := calendar.NextDayOnClose(start)
+	testTime := time.Date(2023, 6, 28, 0, 0, 0, 0, location)
+	nextDayWindow := calendar.NextDayOnClose(testTime)
 
-	// Check if the next trading window is correct
-	if !nextDayWindow.Start.Equal(calendar.CloseWindow.Start.AddDate(0, 0, 1)) {
-		t.Errorf("NextDayOnOpen() failed, Start stamp not correct")
-	}
-	if !nextDayWindow.End.Equal(calendar.CloseWindow.End.AddDate(0, 0, 1)) {
-		t.Errorf("NextDayOnOpen() failed, End stamp not correct")
+	if nextDayWindow.Start.Day() != 29 {
+		t.Errorf("NextDayOnClose() Start failed, expected 29, got %d", nextDayWindow.Start.Day())
 	}
 
+	if nextDayWindow.End.Day() != 29 {
+		t.Errorf("NextDayOnClose() End failed, expected 29, got %d", nextDayWindow.End.Day())
+	}
+
+	if nextDayWindow.Location != location {
+		t.Errorf("NextDayOnClose() Location failed, expected %s, got %s", location, nextDayWindow.Location)
+	}
+
+	// compare starting hour and minute
+	if calendar.OnClose.Start.Hour() != nextDayWindow.Start.In(calendar.OnClose.Location).Hour() {
+		t.Errorf("NextDayOnClose() Start Hour failed, expected %d, got %d", calendar.OnClose.Start.Hour(),
+			nextDayWindow.Start.In(calendar.OnClose.Location).Hour())
+	}
+
+	if calendar.OnClose.Start.Minute() != nextDayWindow.Start.In(calendar.OnClose.Location).Minute() {
+		t.Errorf("NextDayOnClose() Start Minute failed, expected %d, got %d", calendar.OnClose.Start.Minute(),
+			nextDayWindow.Start.In(calendar.OnClose.Location).Minute())
+	}
+
+	// compare ending hour and minute
+	if calendar.OnClose.End.Hour() != nextDayWindow.End.In(calendar.OnClose.Location).Hour() {
+		t.Errorf("NextDayOnClose() End Hour failed, expected %d, got %d", calendar.OnClose.End.Hour(),
+			nextDayWindow.End.In(calendar.OnClose.Location).Hour())
+	}
+
+	if calendar.OnClose.End.Minute() != nextDayWindow.End.In(calendar.OnClose.Location).Minute() {
+		t.Errorf("NextDayOnClose() End Minute failed, expected %d, got %d", calendar.OnClose.End.Minute(),
+			nextDayWindow.End.In(calendar.OnClose.Location).Minute())
+	}
 }
 
-func TestNextDayOnCloseWrongLocation(t *testing.T) {
-	// Define a start and end time for the trading windows
-	start := time.Date(2023, 6, 19, 9, 30, 0, 0, time.UTC)
-	end := time.Date(2023, 6, 19, 16, 0, 0, 0, time.UTC)
+func TestNextBusinessDayUS(t *testing.T) {
 
-	// Create a new trading calendar with just an Open window
-	calendar, _ := NewTradingCalendar(TradingWindow{Start: start, End: end}, TradingWindow{})
-
-	location, _ := time.LoadLocation("America/New_York")
-	testTime := time.Date(2023, 6, 18, 10, 0, 0, 0, location)
-	// Get the next trading window
-	_, err := calendar.NextDayOnClose(testTime)
-
-	if err == nil {
-		t.Errorf("NextDayOnOpen() expected an error, got nil")
-	}
-}
-
-func TestNextBusinessDay(t *testing.T) {
-
-	calendar, _ := NewTradingCalendar(TradingWindow{}, TradingWindow{})
+	calendar, _ := NewTradingCalendarUS()
 	// Normal Business Day
 	normalDay := time.Date(2023, 6, 20, 21, 30, 0, 0, time.UTC)
 	_, _, nextday := calendar.NextBusinessDay(normalDay).Date()
@@ -193,39 +143,33 @@ func TestNextBusinessDay(t *testing.T) {
 
 }
 
-func TestIsOnClose(t *testing.T) {
-	// Define a start and end time for the trading windows
-	start := time.Date(2023, 6, 18, 21, 30, 0, 0, time.UTC)
-	end := time.Date(2023, 6, 18, 21, 45, 0, 0, time.UTC)
+func TestIsOnCloseUS(t *testing.T) {
+	calendar, _ := NewTradingCalendarUS()
 
-	// Create a new trading calendar
-	calendar, _ := NewTradingCalendar(TradingWindow{}, TradingWindow{Start: start, End: end})
+	location, _ := time.LoadLocation("Europe/Berlin")
 
-	testTime := time.Date(2023, 6, 18, 21, 35, 0, 0, time.UTC)
+	testTime := time.Date(2023, 6, 18, 21, 35, 0, 0, location)
 	if !calendar.IsOnClose(testTime) {
 		t.Errorf("IsOnClose() failed, expected true, got false")
 	}
 
-	testTime = time.Date(2023, 6, 18, 21, 0, 0, 0, time.UTC)
+	testTime = time.Date(2023, 6, 18, 21, 0, 0, 0, location)
 	if calendar.IsOnClose(testTime) {
 		t.Errorf("IsOnClose() failed, expected false, got true")
 	}
 }
 
-func TestIsOnOpen(t *testing.T) {
-	// Define a start and end time for the trading windows
-	start := time.Date(2023, 6, 18, 15, 30, 0, 0, time.UTC)
-	end := time.Date(2023, 6, 18, 16, 00, 0, 0, time.UTC)
+func TestIsOnOpenUS(t *testing.T) {
+	calendar, _ := NewTradingCalendarUS()
 
-	// Create a new trading calendar
-	calendar, _ := NewTradingCalendar(TradingWindow{Start: start, End: end}, TradingWindow{})
+	location, _ := time.LoadLocation("Europe/Berlin")
 
-	testTime := time.Date(2023, 6, 18, 15, 35, 0, 0, time.UTC)
+	testTime := time.Date(2023, 6, 18, 15, 46, 0, 0, location)
 	if !calendar.IsOnOpen(testTime) {
 		t.Errorf("IsOnOpen() failed, expected true, got false")
 	}
 
-	testTime = time.Date(2023, 6, 18, 17, 0, 0, 0, time.UTC)
+	testTime = time.Date(2023, 6, 18, 17, 0, 0, 0, location)
 	if calendar.IsOnOpen(testTime) {
 		t.Errorf("IsOnOpen() failed, expected false, got true")
 	}
