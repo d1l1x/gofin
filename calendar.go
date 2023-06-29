@@ -27,6 +27,8 @@ type TradingCalendar struct {
 	TradingHours TimeWindow
 }
 
+var US = "America/New_York"
+
 // TradingWindowUS creates a new TradingWindow struct representing the standard trading hours of
 // AMEX, ARCA, BATS, NYSE, NASDAQ, NYSEARCA.
 // Here are the standard trading hours for these exchanges (in Eastern Time):
@@ -34,7 +36,7 @@ type TradingCalendar struct {
 //   - Regular Trading Hours: 9:30 a.m. to 4:00 p.m.
 //   - After-Market Hours: 4:00 p.m. to 8:00 p.m.
 func TradingWindowUS() (TimeWindow, error) {
-	location, err := time.LoadLocation("America/New_York")
+	location, err := time.LoadLocation(US)
 	if err != nil {
 		return TimeWindow{}, err
 	}
@@ -43,7 +45,7 @@ func TradingWindowUS() (TimeWindow, error) {
 }
 
 func TradingWindowUSOnOpen() (TimeWindow, error) {
-	location, err := time.LoadLocation("America/New_York")
+	location, err := time.LoadLocation(US)
 	if err != nil {
 		return TimeWindow{}, err
 	}
@@ -52,7 +54,7 @@ func TradingWindowUSOnOpen() (TimeWindow, error) {
 }
 
 func TradingWindowUSOnClose() (TimeWindow, error) {
-	location, err := time.LoadLocation("America/New_York")
+	location, err := time.LoadLocation(US)
 	if err != nil {
 		return TimeWindow{}, err
 	}
