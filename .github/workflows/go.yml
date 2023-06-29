@@ -27,7 +27,7 @@ jobs:
           # go tool cover -func coverage.out
       - name: Test
         run: |
-          go test -coverprofile coverage.out -json > coverage.json
+           go test -covermode=atomic -coverprofile=coverage.out -json ./... > testreport.json
 
       - name: Build
         run: go build -v ./...
