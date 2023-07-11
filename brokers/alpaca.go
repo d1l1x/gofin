@@ -9,7 +9,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/d1l1x/gofin"
+	"github.com/d1l1x/gofin/utils"
 	"github.com/sirupsen/logrus"
 )
 
@@ -29,7 +29,7 @@ type AlpacaCredentials struct {
 
 func Alpaca(credentials *AlpacaCredentials, baseUrl string, logLevel logrus.Level) *AlpacaBroker {
 
-	log.SetFormatter(&gofin.PrefixedFormatter{
+	log.SetFormatter(&utils.PrefixedFormatter{
 		Prefix:    "Alpaca",
 		TextColor: color.FgGreen,
 		Formatter: &logrus.TextFormatter{},

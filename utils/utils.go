@@ -1,4 +1,4 @@
-package gofin
+package utils
 
 import (
 	"fmt"
