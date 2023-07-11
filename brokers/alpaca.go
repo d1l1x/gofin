@@ -84,6 +84,14 @@ func (broker *AlpacaBroker) IsMarketOpen() (bool, error) {
 	return false, nil
 }
 
+func (broker *AlpacaBroker) GetAccountInfo() {
+	account, err := broker.trade.GetAccount()
+	if err != nil {
+		log.Fatalf("get account info: %v", err)
+	}
+	log.Infof("account: %v", account)
+}
+
 func (broker *AlpacaBroker) BuyingPower() (float64, error) {
 	account, err := broker.trade.GetAccount()
 	if err != nil {
@@ -156,31 +164,31 @@ func (broker *AlpacaBroker) LimitOrder(side alpaca.Side, symbol string, quantity
 	return order.ID, nil
 }
 
-func (broker *AlpacaBroker) GetListOfAssets(status, class, exchange string, tradable bool) ([]alpaca.Asset, error) {
+func (broker *AlpacaBroker) GetListOfAssets(status, class, exchange string) ([]alpaca.Asset, error) {
 	if status == "" {
 		status = "active"
 	}
 	if class == "" {
 		class = "us_equity"
 	}
+	log.Debugf("GetListOfAssets: status=%s, class=%s, exchange=%s", status, class, exchange)
 	allAssets, err := broker.trade.GetAssets(alpaca.GetAssetsRequest{
 		Status:     status,
 		AssetClass: class,
 		Exchange:   exchange,
 	})
-	tradableAsset := make([]alpaca.Asset, 0)
-	if tradable {
-		for _, asset := range allAssets {
-			if !asset.Tradable {
-				continue
-			}
-			tradableAsset = append(tradableAsset, asset)
-		}
-	}
 	if err != nil {
 		return nil, fmt.Errorf("GetListOfAssets: %w", err)
 	}
-	return tradableAsset, nil
+	assets := make([]alpaca.Asset, 0)
+	log.Debugf("GetListOfAssets: filtering tradable and non-OTC assets")
+	for _, asset := range allAssets {
+		if !asset.Tradable || asset.Exchange == "OTC" {
+			continue
+		}
+		assets = append(assets, asset)
+	}
+	return assets, nil
 }
 
 func (broker *AlpacaBroker) GetSymbolBars(symbol string, period int) ([]marketdata.Bar, error) {
