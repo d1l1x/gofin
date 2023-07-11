@@ -1,17 +1,18 @@
-package watchlist
+package gofin
 
 import (
 	"errors"
 	"github.com/d1l1x/gofin/indicators"
 )
 
-type Stock struct {
-	symbol string
-	bars   indicators.BarHistory
+type Asset struct {
+	Symbol string
+	Name   string
+	Id     string
 }
 
 type Watchlist struct {
-	Stocks  []*Stock
+	Assets  []Asset
 	Filters []*Filter
 }
 
@@ -30,34 +31,39 @@ type Filter struct {
 	Value     interface{}
 }
 
-func (w *Watchlist) AddStock(s *Stock) {
-	w.Stocks = append(w.Stocks, s)
+func NewWatchlist() *Watchlist {
+	return &Watchlist{}
 }
 
-func (w *Watchlist) SetStocks(stocks []*Stock) {
-	w.Stocks = stocks
+func (w *Watchlist) AddAsset(a Asset) {
+	w.Assets = append(w.Assets, a)
 }
 
 func (w *Watchlist) AddFilter(f *Filter) {
 	w.Filters = append(w.Filters, f)
 }
 
-//func (w *Watchlist) ApplyFilters() *Watchlist {
-//	filtered := &Watchlist{}
-//	for _, s := range w.Stocks {
-//		passes := true
-//		for _, c := range w.Filters {
-//			if !c(s) {
-//				passes = false
-//				break
-//			}
-//		}
-//		if passes {
-//			filtered.AddStock(s)
-//		}
-//	}
-//	return filtered
-//}
+func (w *Watchlist) ApplyFilters() *Watchlist {
+	filtered := &Watchlist{}
+	for _, asset := range w.Assets {
+		passes := true
+
+		//TODO: Get history bars
+		//TODO: How much history do I need?
+
+		for _, filter := range w.Filters {
+			res, _ := filter.apply()
+			if !res {
+				passes = false
+				break
+			}
+		}
+		if passes {
+			filtered.AddAsset(asset)
+		}
+	}
+	return filtered
+}
 
 // NewFilter creates a new Filter with the given indicator, comparison operator, and value.
 // The indicator should be an implementation of the Indicator interface, which has a Compute method
@@ -112,7 +118,8 @@ func NewFilter(indicator indicators.Indicator, operator Comparison, value interf
 //
 // This will compute the Indicator's value, compare it to the Filter's value using the Filter's
 // comparison operator, and return the result of the comparison.
-func (f Filter) Apply() (bool, error) {
+// TODO: Put error checking into NewFilter function
+func (f Filter) apply() (bool, error) {
 	val := f.Indicator.Compute()
 	indicatorValue := val[len(val)-1]
 	var compareValue float64
