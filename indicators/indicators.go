@@ -10,6 +10,7 @@ type BarHistory struct {
 
 type Indicator interface {
 	Compute() []float64
+	SetInput(bars *BarHistory)
 }
 
 type GeneralIndicator struct {
@@ -22,9 +23,17 @@ type TimeSeriesIndicator struct {
 	GeneralIndicator
 }
 
+func (ind *TimeSeriesIndicator) SetInput(bars *BarHistory) {
+	ind.input = bars.Close
+}
+
 type BarHistoryIndicator struct {
 	input BarHistory
 	GeneralIndicator
+}
+
+func (ind *BarHistoryIndicator) SetInput(bars *BarHistory) {
+	ind.input = *bars
 }
 
 func NewTimeSeriesIndicator(input []float64, period int) TimeSeriesIndicator {
