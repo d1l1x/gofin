@@ -4,16 +4,13 @@ import (
 	"fmt"
 	"github.com/alpacahq/alpaca-trade-api-go/v3/alpaca"
 	"github.com/alpacahq/alpaca-trade-api-go/v3/marketdata"
-	"github.com/fatih/color"
-	"github.com/shopspring/decimal"
-	"os"
-	"time"
-
 	"github.com/d1l1x/gofin/utils"
-	"github.com/sirupsen/logrus"
+	"github.com/shopspring/decimal"
+	"go.uber.org/zap"
+	"time"
 )
 
-var log = logrus.New()
+var log = utils.NewZapLogger("broker", utils.Debug) //.Sugar()
 
 const basePaperURL = "https://paper-api.alpaca.markets"
 
@@ -27,17 +24,12 @@ type AlpacaCredentials struct {
 	ApiSecret string
 }
 
-func Alpaca(credentials *AlpacaCredentials, baseUrl string, logLevel logrus.Level) *AlpacaBroker {
+func Alpaca(credentials *AlpacaCredentials, baseUrl string) *AlpacaBroker {
 
-	log.SetFormatter(&utils.PrefixedFormatter{
-		Prefix:    "Alpaca",
-		TextColor: color.FgGreen,
-		Formatter: &logrus.TextFormatter{},
-	})
-	log.SetOutput(os.Stdout)
-	log.SetLevel(logLevel)
+	log.Info("Setup Broker", zap.String("name", "Alpaca"))
 
 	if baseUrl == "" {
+		log.Info("Use paper trading", zap.String("url", basePaperURL))
 		baseUrl = basePaperURL
 	}
 	if credentials != nil {
@@ -55,7 +47,7 @@ func Alpaca(credentials *AlpacaCredentials, baseUrl string, logLevel logrus.Leve
 			}),
 		}
 	} else {
-		log.Debugln("reading credentials from environment variables")
+		log.Debug("Get credentials from environment")
 		return &AlpacaBroker{
 			trade: alpaca.NewClient(alpaca.ClientOpts{
 				BaseURL: baseUrl,
@@ -78,8 +70,9 @@ func (broker *AlpacaBroker) IsMarketOpen() (bool, error) {
 	if clock.IsOpen {
 		return true, nil
 	} else {
-		timeToOpen := int(clock.NextOpen.Sub(clock.Timestamp).Minutes())
-		log.Debugf("%d minutes until next market open\n", timeToOpen)
+		//timeToOpen := int(clock.NextOpen.Sub(clock.Timestamp).Minutes())
+		//log.Debug("%d minutes until next market open\n", timeToOpen)
+		log.Debug("Market is closed")
 	}
 	return false, nil
 }
@@ -87,9 +80,9 @@ func (broker *AlpacaBroker) IsMarketOpen() (bool, error) {
 func (broker *AlpacaBroker) GetAccountInfo() {
 	account, err := broker.trade.GetAccount()
 	if err != nil {
-		log.Fatalf("get account info: %v", err)
+		log.Fatal("Get account info", zap.Error(err))
 	}
-	log.Infof("account: %v", account)
+	log.Info("Account info", zap.Any("account", account))
 }
 
 func (broker *AlpacaBroker) BuyingPower() (float64, error) {
@@ -157,9 +150,9 @@ func (broker *AlpacaBroker) LimitOrder(side alpaca.Side, symbol string, quantity
 		TimeInForce: timeInForce,
 	})
 	if err == nil {
-		log.Infof("Limit order placed: %s", order.ID)
+		log.Info("Order placed", zap.String("type", "limit"), zap.String("id", order.ID))
 	} else {
-		log.Warnf("Limit order failed: %s", err.Error())
+		log.Warn("Order failed", zap.String("type", "limit"), zap.Error(err))
 	}
 	return order.ID, nil
 }
@@ -171,7 +164,7 @@ func (broker *AlpacaBroker) GetListOfAssets(status, class, exchange string) ([]a
 	if class == "" {
 		class = "us_equity"
 	}
-	log.Debugf("GetListOfAssets: status=%s, class=%s, exchange=%s", status, class, exchange)
+	log.Debug("Get list of assets", zap.String("status", status), zap.String("class", class), zap.String("exchange", exchange))
 	allAssets, err := broker.trade.GetAssets(alpaca.GetAssetsRequest{
 		Status:     status,
 		AssetClass: class,
@@ -181,7 +174,7 @@ func (broker *AlpacaBroker) GetListOfAssets(status, class, exchange string) ([]a
 		return nil, fmt.Errorf("GetListOfAssets: %w", err)
 	}
 	assets := make([]alpaca.Asset, 0)
-	log.Debugf("GetListOfAssets: filtering tradable and non-OTC assets")
+	log.Debug("Filter list of assets", zap.Strings("filters", []string{"tradable", "non-OTC"}))
 	for _, asset := range allAssets {
 		if !asset.Tradable || asset.Exchange == "OTC" {
 			continue
