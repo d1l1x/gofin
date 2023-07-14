@@ -6,8 +6,6 @@ import (
 	"go.uber.org/zap"
 )
 
-var log = NewZapLogger("watchlist", Debug)
-
 type Asset struct {
 	Symbol string
 	Name   string
