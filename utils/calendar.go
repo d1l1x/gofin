@@ -3,8 +3,11 @@ package utils
 import (
 	"github.com/rickar/cal/v2"
 	"github.com/rickar/cal/v2/us"
+	"go.uber.org/zap"
 	"time"
 )
+
+var log = NewZapLogger("calendar", Debug) //.Sugar()
 
 type TimeWindow struct {
 	Start    time.Time
@@ -68,8 +71,14 @@ func TradingWindowUSOnClose() (TimeWindow, error) {
 // the opening and closing hours of the trading day, respectively.
 // It returns a TradingCalendar struct.
 func NewTradingCalendarUS() (*TradingCalendar, error) {
+	log.Info("Creating new trading calendar")
 	c := cal.NewBusinessCalendar()
 	// Add US Holidays
+	log.Debug("Add US holidays to calendar",
+		zap.Strings("holidays", []string{"NewYear", "MlkDay", "PresidentsDay", "MemorialDay", "Juneteenth",
+			"IndependenceDay", "LaborDay", "ThanksgivingDay", "ChristmasDay", "VeteransDay", "ColumbusDay"}
+		),
+	)
 	c.AddHoliday(
 		us.NewYear,
 		us.MlkDay,
@@ -80,6 +89,8 @@ func NewTradingCalendarUS() (*TradingCalendar, error) {
 		us.LaborDay,
 		us.ThanksgivingDay,
 		us.ChristmasDay,
+		us.VeteransDay,
+		us.ColumbusDay,
 	)
 	tradingWindow, err := TradingWindowUS()
 	if err != nil {
@@ -116,6 +127,8 @@ func (c *TradingCalendar) NextDayOnOpen(t time.Time) TimeWindow {
 	start := time.Date(nextYear, nextMonth, nextDay, startHour, startMinute, 0, 0, c.OnOpen.Location).In(t.Location())
 	end := time.Date(nextYear, nextMonth, nextDay, endHour, endMinute, 0, 0, c.OnOpen.Location).In(t.Location())
 
+	log.Debug("Next day on open", zap.Time("start",start), zap.Time("end",end))
+
 	return TimeWindow{Start: start, End: end, Location: t.Location()}
 }
 
@@ -128,6 +141,8 @@ func (c *TradingCalendar) NextDayOnClose(t time.Time) TimeWindow {
 
 	start := time.Date(nextYear, nextMonth, nextDay, startHour, startMinute, 0, 0, c.OnClose.Location).In(t.Location())
 	end := time.Date(nextYear, nextMonth, nextDay, endHour, endMinute, 0, 0, c.OnClose.Location).In(t.Location())
+
+	log.Debug("Next day on close", zap.Time("start",start), zap.Time("end",end))
 
 	return TimeWindow{Start: start, End: end, Location: t.Location()}
 }
@@ -190,6 +205,7 @@ func (c *TradingCalendar) NextBusinessDay(t time.Time) time.Time {
 			// If it's a holiday or weekend, add 1 day
 			t = t.AddDate(0, 0, 1)
 		default:
+			log.Info("Next business day", zap.Time("t",t))
 			return t
 		}
 	}
