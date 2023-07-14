@@ -3,7 +3,10 @@ package utils
 import (
 	"errors"
 	"github.com/d1l1x/gofin/indicators"
+	"go.uber.org/zap"
 )
+
+var log = NewZapLogger("watchlist", Debug)
 
 type Asset struct {
 	Symbol string
@@ -32,6 +35,7 @@ type Filter struct {
 }
 
 func NewWatchlist() *Watchlist {
+	log.Debug("Create new watchlist")
 	return &Watchlist{}
 }
 
@@ -40,29 +44,20 @@ func (w *Watchlist) AddAsset(a Asset) {
 }
 
 func (w *Watchlist) AddFilter(f *Filter) {
+	log.Debug("Add filter to watchlist")
 	w.Filters = append(w.Filters, f)
 }
 
-func (w *Watchlist) ApplyFilters() *Watchlist {
-	filtered := &Watchlist{}
-	for _, asset := range w.Assets {
-		passes := true
-
-		//TODO: Get history bars
-		//TODO: How much history do I need?
-
-		for _, filter := range w.Filters {
-			res, _ := filter.apply()
-			if !res {
-				passes = false
-				break
-			}
-		}
-		if passes {
-			filtered.AddAsset(asset)
+func (w *Watchlist) ApplyFilters(bars *indicators.BarHistory) bool {
+	for _, filter := range w.Filters {
+		res, _ := filter.apply(bars)
+		if !res {
+			//passes = false
+			//break
+			return false
 		}
 	}
-	return filtered
+	return true
 }
 
 // NewFilter creates a new Filter with the given indicator, comparison operator, and value.
@@ -88,6 +83,7 @@ func (w *Watchlist) ApplyFilters() *Watchlist {
 // indicator, LT as the comparison operator, and the result of OtherIndicator's Compute method as the value to compare
 // to.
 func NewFilter(indicator indicators.Indicator, operator Comparison, value interface{}) *Filter {
+	log.Debug("New Filter", zap.Any("indicator", indicator), zap.Any("operator", operator), zap.Any("value", value))
 	return &Filter{
 		Indicator: indicator,
 		Operator:  operator,
@@ -119,9 +115,13 @@ func NewFilter(indicator indicators.Indicator, operator Comparison, value interf
 // This will compute the Indicator's value, compare it to the Filter's value using the Filter's
 // comparison operator, and return the result of the comparison.
 // TODO: Put error checking into NewFilter function
-func (f Filter) apply() (bool, error) {
+func (f Filter) apply(bars *indicators.BarHistory) (bool, error) {
+
+	f.Indicator.SetInput(bars)
+
 	val := f.Indicator.Compute()
 	indicatorValue := val[len(val)-1]
+
 	var compareValue float64
 
 	// Check if the value to compare to is a float64 or an Indicator
