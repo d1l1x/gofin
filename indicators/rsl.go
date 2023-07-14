@@ -11,13 +11,13 @@ func RSL(input []float64, period int) *RelativeStrengthLevy {
 }
 
 func (ind *RelativeStrengthLevy) Compute() ([]float64, error) {
-	err := CheckInput(ind.input, ind.Period)
+	err := CheckInput(ind.Input, ind.Period)
 	if err != nil {
 		return nil, err
 	}
-	res := make([]float64, len(ind.input))
-	for i := ind.Period; i < len(ind.input); i++ {
-		res[i] = ind.input[i] / Mean(ind.input[i-ind.Period:i+1])
+	res := make([]float64, len(ind.Input))
+	for i := ind.Period; i < len(ind.Input); i++ {
+		res[i] = ind.Input[i] / Mean(ind.Input[i-ind.Period:i+1])
 	}
 	return res, nil
 }

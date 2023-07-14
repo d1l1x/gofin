@@ -11,10 +11,10 @@ type RateOfChange struct {
 }
 
 func (ind *RateOfChange) Compute() []float64 {
-	roc := make([]float64, len(ind.input))
+	roc := make([]float64, len(ind.Input))
 
-	for i := ind.Period; i < len(ind.input); i++ {
-		roc[i] = ((ind.input[i] - ind.input[i-ind.Period]) / ind.input[i-ind.Period]) * 100
+	for i := ind.Period; i < len(ind.Input); i++ {
+		roc[i] = ((ind.Input[i] - ind.Input[i-ind.Period]) / ind.Input[i-ind.Period]) * 100
 	}
 
 	return roc

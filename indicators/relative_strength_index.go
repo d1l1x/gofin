@@ -12,17 +12,17 @@ type RelativeStrengthIndex struct {
 
 func (ind *RelativeStrengthIndex) Compute() []float64 {
 
-	if len(ind.input) < ind.Period {
+	if len(ind.Input) < ind.Period {
 		return nil
 	}
 
-	rsi := make([]float64, len(ind.input))
+	rsi := make([]float64, len(ind.Input))
 
 	sumGains := 0.0
 	sumLosses := 0.0
 
 	for i := 1; i < ind.Period; i++ {
-		gain, loss := ind.calculateGainLoss(ind.input[i], ind.input[i-1])
+		gain, loss := ind.calculateGainLoss(ind.Input[i], ind.Input[i-1])
 		sumGains += gain
 		sumLosses += loss
 	}
@@ -31,8 +31,8 @@ func (ind *RelativeStrengthIndex) Compute() []float64 {
 
 	rsi[ind.Period-1] = 100.0 - (100.0 / (1.0 + sumGains/sumLosses))
 
-	for i := ind.Period; i < len(ind.input); i++ {
-		gain, loss := ind.calculateGainLoss(ind.input[i], ind.input[i-1])
+	for i := ind.Period; i < len(ind.Input); i++ {
+		gain, loss := ind.calculateGainLoss(ind.Input[i], ind.Input[i-1])
 		sumGains = (sumGains*float64(ind.Period-1) + gain) / float64(ind.Period)
 		sumLosses = (sumLosses*float64(ind.Period-1) + loss) / float64(ind.Period)
 		rsi[i] = 100.0 - (100.0 / (1.0 + sumGains/sumLosses))

@@ -19,26 +19,26 @@ type GeneralIndicator struct {
 }
 
 type TimeSeriesIndicator struct {
-	input []float64
+	Input []float64
 	GeneralIndicator
 }
 
 func (ind *TimeSeriesIndicator) SetInput(bars *BarHistory) {
-	ind.input = bars.Close
+	ind.Input = bars.Close
 }
 
 type BarHistoryIndicator struct {
-	input BarHistory
+	Input BarHistory
 	GeneralIndicator
 }
 
 func (ind *BarHistoryIndicator) SetInput(bars *BarHistory) {
-	ind.input = *bars
+	ind.Input = *bars
 }
 
 func NewTimeSeriesIndicator(input []float64, period int) TimeSeriesIndicator {
 	return TimeSeriesIndicator{
-		input: input,
+		Input: input,
 		GeneralIndicator: GeneralIndicator{
 			Values: []float64{},
 			Period: period,
@@ -48,7 +48,7 @@ func NewTimeSeriesIndicator(input []float64, period int) TimeSeriesIndicator {
 
 func NewBarHistoryIndicator(input BarHistory, period int) BarHistoryIndicator {
 	return BarHistoryIndicator{
-		input: input,
+		Input: input,
 		GeneralIndicator: GeneralIndicator{
 			Values: []float64{},
 			Period: period,
