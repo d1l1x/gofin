@@ -1,6 +1,7 @@
 package gofin
 
 import (
+	"fmt"
 	"github.com/d1l1x/gofin/brokers"
 	"github.com/d1l1x/gofin/providers"
 	"github.com/d1l1x/gofin/utils"
@@ -58,43 +59,51 @@ func (ts *TradingSystem) Run() {
 		//TODO: Check time based exits
 
 		// Check assets for filter criteria
-		passed := make(chan bool, len(ts.watchlist.Assets))
 		errChan := make(chan error, len(ts.watchlist.Assets))
 
-		for _, asset := range ts.watchlist.Assets {
-			go func(symbol string) {
-				bars, err := ts.provider.GetHistBars(symbol, 100)
+		var assetsToConsider []utils.Asset
+
+		for i, asset := range ts.watchlist.Assets {
+			go func(idx int, a utils.Asset) {
+				bars, err := ts.provider.GetHistBars(a.Symbol, 100)
 				if err != nil {
 					errChan <- err
 					return
 				}
 
-				log.Debug("Apply filters", zap.String("symbol", symbol))
-				passed <- ts.watchlist.ApplyFilters(bars)
-				//TODO: Add computation of rank
+				passed := ts.watchlist.ApplyFilters(a.Symbol, bars)
 
+				////TODO: Check setup
+				ts.watchlist.ApplyRanking(&ts.watchlist.Assets[idx], bars)
+				if passed {
+					assetsToConsider = append(assetsToConsider, ts.watchlist.Assets[idx])
+				}
 				errChan <- nil
-			}(asset.Symbol)
+			}(i, asset)
 		}
-
-		assetsToConsider := utils.Watchlist{}
-
-		for _, asset := range ts.watchlist.Assets {
-			select {
-			case pass := <-passed:
-				if pass {
-					assetsToConsider.AddAsset(asset)
-				}
-			case err := <-errChan:
-				if err != nil {
-					log.Error("Channel error", zap.Error(err))
-				}
+		// Check possible channel errors
+		for range ts.watchlist.Assets {
+			if err := <-errChan; err != nil {
+				log.Error("Channel error", zap.Error(err))
 			}
 		}
 
-		for _, asset := range assetsToConsider.Assets {
-			log.Info("Considering Symbol", zap.String("symbol", asset.Symbol))
+		log.Info("Rank assets")
+		ts.watchlist.RankAssets(assetsToConsider)
+
+		// print first 10 entries of assetsToConsider
+		for i, asset := range assetsToConsider[:10] {
+			fmt.Printf("First symbols: %v. %v, rank: %v\n", i, asset.Symbol, asset.Rank)
 		}
+
+		// print last 10 entries of assetsToConsider
+		for i, asset := range assetsToConsider[len(assetsToConsider)-10:] {
+			fmt.Printf("Last symbols: %v. %v, rank: %v\n", i, asset.Symbol, asset.Rank)
+		}
+
+		//for _, asset := range assetsToConsider.Assets {
+		//	log.Info("Considering Symbol", zap.String("symbol", asset.Symbol))
+		//}
 		break
 	}
 }
