@@ -1,4 +1,4 @@
-package gofin
+package utils
 
 import (
 	"github.com/rickar/cal/v2"
@@ -67,7 +67,7 @@ func TradingWindowUSOnClose() (TimeWindow, error) {
 // The function takes two arguments: 'OnOpen' and 'OnClose', which are TradingWindow structs representing
 // the opening and closing hours of the trading day, respectively.
 // It returns a TradingCalendar struct.
-func NewTradingCalendarUS() (TradingCalendar, error) {
+func NewTradingCalendarUS() (*TradingCalendar, error) {
 	c := cal.NewBusinessCalendar()
 	// Add US Holidays
 	c.AddHoliday(
@@ -83,17 +83,17 @@ func NewTradingCalendarUS() (TradingCalendar, error) {
 	)
 	tradingWindow, err := TradingWindowUS()
 	if err != nil {
-		return TradingCalendar{}, err
+		return nil, err
 	}
 	onOpen, err := TradingWindowUSOnOpen()
 	if err != nil {
-		return TradingCalendar{}, err
+		return nil, err
 	}
 	onClose, err := TradingWindowUSOnClose()
 	if err != nil {
-		return TradingCalendar{}, err
+		return nil, err
 	}
-	return TradingCalendar{
+	return &TradingCalendar{
 		Calendar:     c,
 		OnOpen:       onOpen,
 		OnClose:      onClose,
