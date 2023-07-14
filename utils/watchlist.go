@@ -4,17 +4,20 @@ import (
 	"errors"
 	"github.com/d1l1x/gofin/indicators"
 	"go.uber.org/zap"
+	"sort"
 )
 
 type Asset struct {
 	Symbol string
 	Name   string
 	Id     string
+	Rank   float64
 }
 
 type Watchlist struct {
 	Assets  []Asset
 	Filters []*Filter
+	Ranking *Ranking
 }
 
 type Comparison int
@@ -46,7 +49,8 @@ func (w *Watchlist) AddFilter(f *Filter) {
 	w.Filters = append(w.Filters, f)
 }
 
-func (w *Watchlist) ApplyFilters(bars *indicators.BarHistory) bool {
+func (w *Watchlist) ApplyFilters(symbol string, bars *indicators.BarHistory) bool {
+	log.Debug("Apply filters", zap.String("symbol", symbol))
 	for _, filter := range w.Filters {
 		res, _ := filter.apply(bars)
 		if !res {
@@ -56,6 +60,42 @@ func (w *Watchlist) ApplyFilters(bars *indicators.BarHistory) bool {
 		}
 	}
 	return true
+}
+
+type RankOrder int
+
+const (
+	Ascending = iota
+	Descending
+)
+
+type Ranking struct {
+	Indicator indicators.Indicator
+	Order     RankOrder
+}
+
+func (w *Watchlist) AddRanking(r *Ranking) {
+	log.Debug("Add ranking to watchlist")
+	w.Ranking = r
+}
+
+func (w *Watchlist) ApplyRanking(asset *Asset, bars *indicators.BarHistory) {
+	if w.Ranking != nil {
+		w.Ranking.Indicator.SetInput(bars)
+		val := w.Ranking.Indicator.Compute()
+		asset.Rank = val[len(val)-1]
+	}
+}
+
+func (w *Watchlist) RankAssets(assets []Asset) {
+	if w.Ranking != nil {
+		switch w.Ranking.Order {
+		case Ascending:
+			sort.Slice(assets, func(i, j int) bool { return (assets)[i].Rank < (assets)[j].Rank })
+		case Descending:
+			sort.Slice(assets, func(i, j int) bool { return (assets)[i].Rank > (assets)[j].Rank })
+		}
+	}
 }
 
 // NewFilter creates a new Filter with the given indicator, comparison operator, and value.
