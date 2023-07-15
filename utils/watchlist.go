@@ -35,18 +35,22 @@ type Filter struct {
 	Value     interface{}
 }
 
-func NewWatchlist() *Watchlist {
+func NewWatchlist(assets []Asset, filters []Filter, ranking *Ranking) *Watchlist {
 	log.Debug("Create new watchlist")
-	return &Watchlist{}
+	return &Watchlist{
+		Assets:  assets,
+		Filters: filters,
+		Ranking: ranking,
+	}
 }
 
 func (w *Watchlist) AddAsset(a Asset) {
 	w.Assets = append(w.Assets, a)
 }
 
-func (w *Watchlist) AddFilter(f *Filter) {
+func (w *Watchlist) AddFilter(f Filter) {
 	log.Debug("Add filter to watchlist")
-	w.Filters = append(w.Filters, *f)
+	w.Filters = append(w.Filters, f)
 }
 
 func (w *Watchlist) ApplyFilters(symbol string, bars *indicators.BarHistory) bool {

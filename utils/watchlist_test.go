@@ -52,7 +52,7 @@ func TestWatchAddAsset(t *testing.T) {
 func TestAddFilterFloat(t *testing.T) {
 	w := &Watchlist{}
 	filter := NewFilter(&MockIndicator{}, LT, 0.0)
-	w.AddFilter(filter)
+	w.AddFilter(*filter)
 
 	if len(w.Filters) != 1 {
 		t.Errorf("Expected 1 filter, got %d", len(w.Filters))
@@ -62,7 +62,7 @@ func TestAddFilterFloat(t *testing.T) {
 func TestAddFilterIndicator(t *testing.T) {
 	w := &Watchlist{}
 	filter := NewFilter(&MockIndicator{}, LT, MockIndicator{})
-	w.AddFilter(filter)
+	w.AddFilter(*filter)
 
 	if len(w.Filters) != 1 {
 		t.Errorf("Expected 1 filter, got %d", len(w.Filters))
@@ -72,9 +72,9 @@ func TestAddFilterIndicator(t *testing.T) {
 func TestAddFilterFloatAndIndicator(t *testing.T) {
 	w := &Watchlist{}
 	filter := NewFilter(&MockIndicator{}, LT, 0.0)
-	w.AddFilter(filter)
+	w.AddFilter(*filter)
 	filter = NewFilter(&MockIndicator{}, LT, MockIndicator{})
-	w.AddFilter(filter)
+	w.AddFilter(*filter)
 
 	if len(w.Filters) != 2 {
 		t.Errorf("Expected 2 filters, got %d", len(w.Filters))
