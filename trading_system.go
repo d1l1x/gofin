@@ -4,7 +4,6 @@ import (
 	"github.com/d1l1x/gofin/brokers"
 	"github.com/d1l1x/gofin/providers"
 	"github.com/d1l1x/gofin/utils"
-	"github.com/sirupsen/logrus"
 	"go.uber.org/zap"
 	"time"
 )
@@ -28,7 +27,7 @@ func NewTradingSystem(broker *brokers.AlpacaBroker, watchlist *utils.Watchlist, 
 	}
 }
 
-func (ts *TradingSystem) Init(logLevel logrus.Level) {
+func (ts *TradingSystem) Init() {
 
 	// TODO: Add error checking if necessary objects are initialized
 	// i.e. broker, watchlist, calendar, etc.
