@@ -16,7 +16,7 @@ type Asset struct {
 
 type Watchlist struct {
 	Assets  []Asset
-	Filters []*Filter
+	Filters []Filter
 	Ranking *Ranking
 }
 
@@ -46,7 +46,7 @@ func (w *Watchlist) AddAsset(a Asset) {
 
 func (w *Watchlist) AddFilter(f *Filter) {
 	log.Debug("Add filter to watchlist")
-	w.Filters = append(w.Filters, f)
+	w.Filters = append(w.Filters, *f)
 }
 
 func (w *Watchlist) ApplyFilters(symbol string, bars *indicators.BarHistory) bool {
