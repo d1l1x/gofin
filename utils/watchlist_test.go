@@ -6,16 +6,28 @@ import (
 )
 
 type MockIndicator struct {
-	indicators.Indicator
+	Input  []float64
 	Values []float64
+	Bars   *indicators.BarHistory
 }
 
 func NewMockIndicator(values []float64) *MockIndicator {
-	return &MockIndicator{Values: values}
+	bars := &indicators.BarHistory{
+		Open:   []float64{},
+		High:   []float64{},
+		Low:    []float64{},
+		Close:  values,
+		Volume: []int64{},
+	}
+	return &MockIndicator{Values: values, Bars: bars}
 }
 
 func (m *MockIndicator) Compute() []float64 {
 	return m.Values
+}
+
+func (m *MockIndicator) SetInput(bars *indicators.BarHistory) {
+	m.Input = bars.Close
 }
 
 func TestWatchAddAsset(t *testing.T) {
@@ -73,7 +85,7 @@ func TestFilterFloatApplyLT(t *testing.T) {
 	mock := NewMockIndicator([]float64{1, 2, 3, 4, 5})
 	filter := NewFilter(mock, LT, 3.0)
 
-	res, _ := filter.apply()
+	res, _ := filter.apply(mock.Bars)
 	if res {
 		t.Errorf("Expected filter to return false, got true")
 	}
@@ -81,7 +93,7 @@ func TestFilterFloatApplyLT(t *testing.T) {
 	mock = NewMockIndicator([]float64{1, 2, 3, 4, 2})
 	filter = NewFilter(mock, LT, 3.0)
 
-	res, _ = filter.apply()
+	res, _ = filter.apply(mock.Bars)
 	if !res {
 		t.Errorf("Expected filter to return true, got false")
 	}
@@ -94,7 +106,7 @@ func TestFilterIndicatorApplyLT(t *testing.T) {
 
 	filter := NewFilter(mock1, LT, mock2)
 
-	res, _ := filter.apply()
+	res, _ := filter.apply(mock1.Bars)
 	if res {
 		t.Errorf("Expected filter to return false, got true")
 	}
@@ -104,7 +116,7 @@ func TestFilterIndicatorApplyLT(t *testing.T) {
 
 	filter = NewFilter(mock1, LT, mock2)
 
-	res, _ = filter.apply()
+	res, _ = filter.apply(mock1.Bars)
 	if !res {
 		t.Errorf("Expected filter to return true, got false")
 	}
@@ -115,7 +127,7 @@ func TestFilterFloatApplyGT(t *testing.T) {
 	mock := NewMockIndicator([]float64{1, 2, 3, 4, 5})
 	filter := NewFilter(mock, GT, 6.0)
 
-	res, _ := filter.apply()
+	res, _ := filter.apply(mock.Bars)
 	if res {
 		t.Errorf("Expected filter to return false, got true")
 	}
@@ -123,7 +135,7 @@ func TestFilterFloatApplyGT(t *testing.T) {
 	mock = NewMockIndicator([]float64{1, 2, 3, 4, 2})
 	filter = NewFilter(mock, GT, 1.0)
 
-	res, _ = filter.apply()
+	res, _ = filter.apply(mock.Bars)
 	if !res {
 		t.Errorf("Expected filter to return true, got false")
 	}
@@ -136,7 +148,7 @@ func TestFilterIndicatorApplyGT(t *testing.T) {
 
 	filter := NewFilter(mock1, GT, mock2)
 
-	res, _ := filter.apply()
+	res, _ := filter.apply(mock1.Bars)
 	if res {
 		t.Errorf("Expected filter to return false, got true")
 	}
@@ -146,7 +158,7 @@ func TestFilterIndicatorApplyGT(t *testing.T) {
 
 	filter = NewFilter(mock1, GT, mock2)
 
-	res, _ = filter.apply()
+	res, _ = filter.apply(mock1.Bars)
 	if !res {
 		t.Errorf("Expected filter to return true, got false")
 	}
@@ -157,7 +169,7 @@ func TestFilterFloatApplyLE(t *testing.T) {
 	mock := NewMockIndicator([]float64{1, 2, 3, 4, 5})
 	filter := NewFilter(mock, LE, 4.0)
 
-	res, _ := filter.apply()
+	res, _ := filter.apply(mock.Bars)
 	if res {
 		t.Errorf("Expected filter to return false, got true")
 	}
@@ -165,7 +177,7 @@ func TestFilterFloatApplyLE(t *testing.T) {
 	mock = NewMockIndicator([]float64{1, 2, 3, 4, 2})
 	filter = NewFilter(mock, LE, 2.0)
 
-	res, _ = filter.apply()
+	res, _ = filter.apply(mock.Bars)
 	if !res {
 		t.Errorf("Expected filter to return true, got false")
 	}
@@ -178,7 +190,7 @@ func TestFilterIndicatorApplyLE(t *testing.T) {
 
 	filter := NewFilter(mock1, LE, mock2)
 
-	res, _ := filter.apply()
+	res, _ := filter.apply(mock1.Bars)
 	if res {
 		t.Errorf("Expected filter to return false, got true")
 	}
@@ -188,7 +200,7 @@ func TestFilterIndicatorApplyLE(t *testing.T) {
 
 	filter = NewFilter(mock1, LE, mock2)
 
-	res, _ = filter.apply()
+	res, _ = filter.apply(mock1.Bars)
 	if !res {
 		t.Errorf("Expected filter to return true, got false")
 	}
@@ -198,7 +210,7 @@ func TestFilterFloatApplyGE(t *testing.T) {
 	mock := NewMockIndicator([]float64{1, 2, 3, 4, 5})
 	filter := NewFilter(mock, GE, 6.0)
 
-	res, _ := filter.apply()
+	res, _ := filter.apply(mock.Bars)
 	if res {
 		t.Errorf("Expected filter to return false, got true")
 	}
@@ -206,7 +218,7 @@ func TestFilterFloatApplyGE(t *testing.T) {
 	mock = NewMockIndicator([]float64{1, 2, 3, 4, 2})
 	filter = NewFilter(mock, GE, 2.0)
 
-	res, _ = filter.apply()
+	res, _ = filter.apply(mock.Bars)
 	if !res {
 		t.Errorf("Expected filter to return true, got false")
 	}
@@ -219,7 +231,7 @@ func TestFilterIndicatorApplyGE(t *testing.T) {
 
 	filter := NewFilter(mock1, GE, mock2)
 
-	res, _ := filter.apply()
+	res, _ := filter.apply(mock1.Bars)
 	if res {
 		t.Errorf("Expected filter to return false, got true")
 	}
@@ -229,7 +241,7 @@ func TestFilterIndicatorApplyGE(t *testing.T) {
 
 	filter = NewFilter(mock1, GE, mock2)
 
-	res, _ = filter.apply()
+	res, _ = filter.apply(mock1.Bars)
 	if !res {
 		t.Errorf("Expected filter to return true, got false")
 	}
@@ -240,7 +252,7 @@ func TestFilterApplyUnknownComp(t *testing.T) {
 	mock := NewMockIndicator([]float64{1, 2, 3, 4, 5})
 	filter := NewFilter(mock, 4, 6.0)
 
-	_, err := filter.apply()
+	_, err := filter.apply(mock.Bars)
 	if err == nil {
 		t.Errorf("Expected filter to return error, got nil")
 	}
