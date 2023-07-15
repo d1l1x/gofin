@@ -1,7 +1,6 @@
 package gofin
 
 import (
-	"fmt"
 	"github.com/d1l1x/gofin/brokers"
 	"github.com/d1l1x/gofin/providers"
 	"github.com/d1l1x/gofin/utils"
@@ -63,6 +62,9 @@ func (ts *TradingSystem) Run() {
 
 		var assetsToConsider []utils.Asset
 
+		////TODO: Check setup
+
+		// filter and rank all assets
 		for i, asset := range ts.watchlist.Assets {
 			go func(idx int, a utils.Asset) {
 				bars, err := ts.provider.GetHistBars(a.Symbol, 100)
@@ -70,10 +72,8 @@ func (ts *TradingSystem) Run() {
 					errChan <- err
 					return
 				}
-
 				passed := ts.watchlist.ApplyFilters(a.Symbol, bars)
 
-				////TODO: Check setup
 				ts.watchlist.ApplyRanking(&ts.watchlist.Assets[idx], bars)
 				if passed {
 					assetsToConsider = append(assetsToConsider, ts.watchlist.Assets[idx])
@@ -90,20 +90,5 @@ func (ts *TradingSystem) Run() {
 
 		log.Info("Rank assets")
 		ts.watchlist.RankAssets(assetsToConsider)
-
-		// print first 10 entries of assetsToConsider
-		for i, asset := range assetsToConsider[:10] {
-			fmt.Printf("First symbols: %v. %v, rank: %v\n", i, asset.Symbol, asset.Rank)
-		}
-
-		// print last 10 entries of assetsToConsider
-		for i, asset := range assetsToConsider[len(assetsToConsider)-10:] {
-			fmt.Printf("Last symbols: %v. %v, rank: %v\n", i, asset.Symbol, asset.Rank)
-		}
-
-		//for _, asset := range assetsToConsider.Assets {
-		//	log.Info("Considering Symbol", zap.String("symbol", asset.Symbol))
-		//}
-		break
 	}
 }

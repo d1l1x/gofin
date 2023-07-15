@@ -54,8 +54,6 @@ func (w *Watchlist) ApplyFilters(symbol string, bars *indicators.BarHistory) boo
 	for _, filter := range w.Filters {
 		res, _ := filter.apply(bars)
 		if !res {
-			//passes = false
-			//break
 			return false
 		}
 	}
