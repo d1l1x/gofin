@@ -103,12 +103,23 @@ func (broker *AlpacaBroker) Cash() (float64, error) {
 	return res, nil
 }
 
-func (broker *AlpacaBroker) GetOpenPositions() ([]alpaca.Position, error) {
+func (broker *AlpacaBroker) GetOpenPositions() ([]Position, error) {
 	positions, err := broker.trade.GetPositions()
 	if err != nil {
 		return nil, fmt.Errorf("GetOpenPositions: %w", err)
 	}
-	return positions, nil
+	res := make([]Position, len(positions))
+	for i, p := range positions {
+		qty, _ := p.Qty.Float64()
+		fillPrice, _ := p.AvgEntryPrice.Float64()
+		res[i] = Position{
+			Symbol:       p.Symbol,
+			Quantity:     qty,
+			ID:           p.AssetID,
+			AvgFillPrice: fillPrice,
+		}
+	}
+	return res, nil
 }
 
 func (broker *AlpacaBroker) GetOpenPosition(symbol string) (*alpaca.Position, error) {
@@ -117,6 +128,15 @@ func (broker *AlpacaBroker) GetOpenPosition(symbol string) (*alpaca.Position, er
 		return nil, fmt.Errorf("GetOpenPosition: %w", err)
 	}
 	return position, nil
+}
+
+func (broker *AlpacaBroker) GetOrder(orderId string) (*alpaca.Order, error) {
+	log.Debug("GetOrder", zap.String("orderId", orderId))
+	order, err := broker.trade.GetOrder(orderId)
+	if err != nil {
+		return nil, fmt.Errorf("GetOrder: %w", err)
+	}
+	return order, nil
 }
 
 func (broker *AlpacaBroker) GetOpenOrders() ([]alpaca.Order, error) {
@@ -138,6 +158,15 @@ func (broker *AlpacaBroker) CancelOrder(orderId string) error {
 	return nil
 }
 
+func (broker *AlpacaBroker) CancelAllOrders() error {
+	log.Info("Cancel all open orders")
+	err := broker.trade.CancelAllOrders()
+	if err != nil {
+		return fmt.Errorf("canceling open orders: %w", err)
+	}
+	return nil
+}
+
 func (broker *AlpacaBroker) LimitOrder(side alpaca.Side, symbol string, quantity int, limitPrice float64, timeInForce alpaca.TimeInForce) (string, error) {
 	qty := decimal.NewFromInt(int64(quantity))
 	price := decimal.NewFromFloat(limitPrice)
@@ -153,6 +182,28 @@ func (broker *AlpacaBroker) LimitOrder(side alpaca.Side, symbol string, quantity
 		log.Info("Order placed", zap.String("type", "limit"), zap.String("id", order.ID))
 	} else {
 		log.Warn("Order failed", zap.String("type", "limit"), zap.Error(err))
+	}
+	return order.ID, nil
+}
+
+func (broker *AlpacaBroker) MarketOrder(side alpaca.Side, symbol string, quantity int, timeInForce alpaca.TimeInForce) (string, error) {
+	qty := decimal.NewFromInt(int64(quantity))
+	order, err := broker.trade.PlaceOrder(alpaca.PlaceOrderRequest{
+		Symbol:      symbol,
+		Qty:         &qty,
+		Side:        side,
+		Type:        alpaca.Market,
+		TimeInForce: timeInForce,
+	})
+	if err == nil {
+		log.Info("Order placed",
+			zap.String("type", "market"),
+			zap.String("id", order.ID),
+			zap.String("symbol", symbol),
+			zap.Int("quantity", quantity),
+		)
+	} else {
+		log.Warn("Order failed", zap.String("type", "market"), zap.String("symbol", symbol), zap.Error(err))
 	}
 	return order.ID, nil
 }

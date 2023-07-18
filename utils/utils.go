@@ -6,6 +6,24 @@ import (
 	"os"
 )
 
+type Stack []interface{}
+
+func (s *Stack) Push(v interface{}) {
+	*s = append(*s, v)
+}
+
+func (s *Stack) Pop() interface{} {
+	// Get the last value of the stack
+	res := (*s)[len(*s)-1]
+	// Remove the last value of the stack
+	*s = (*s)[:len(*s)-1]
+	return res
+}
+
+func (s *Stack) IsEmpty() bool {
+	return len(*s) == 0
+}
+
 const (
 	Debug = zap.DebugLevel
 	Info  = zap.InfoLevel
